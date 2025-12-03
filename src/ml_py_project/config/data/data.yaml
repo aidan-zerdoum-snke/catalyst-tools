@@ -1,0 +1,38 @@
+defaults:
+  - /data_lib/data/base_data_config@_here_
+
+_target_: snketorch.data.datamodules.SnkeDataModule
+# https://snketorch.dainmlops.snkeos.dev/snketorch.data.html#snketorch.data.datamodules.SnkeDataModule
+datasets:
+  train:
+    datasource:
+      _target_: snketorch.data.datasets.ClearmlDataset
+      dataset_project: ml-py-project
+      dataset_name: minimal-total-segmentator
+      dataset_version: 1.0.0
+      file_extension: h5
+  dev: ${.train} # using the train dataset as dev for this example to keep it simple
+  evaluation: ${.train}  # this dataset will be used to run evaluation on the onnx model
+transform:
+  seed: ${seed}
+  definitions:
+    load:
+      _target_: monai.transforms.Compose
+      transforms:
+        - _target_: snketorch.data.transforms.load.LoadH5Imaged
+          h5_image_key: image
+          h5_meta_keys:
+            - metaPatient
+          image_data_type: float32
+        - _target_: snketorch.data.transforms.load.LoadH5Segmentationd
+          h5_segmentation_keys: ${misc.label_names}
+          segmentation_key: label
+          fail_on_missing_labels: False
+          attach_meta_from_image: True
+  pipelines:
+    train:
+      - load
+    dev:
+      - load
+    evaluation:
+      - load

@@ -1,0 +1,15 @@
+_target_: lightning.Trainer
+# see https://lightning.ai/docs/pytorch/stable/common/trainer.html#trainer-class-api for full list of parameters
+default_root_dir: ${hydra:runtime.output_dir}
+
+min_epochs: 0 # delays early stopping
+max_epochs: 10
+accelerator: gpu
+devices: 1
+
+check_val_every_n_epoch: 2
+
+# deterministic: True
+# overfit_batches: 1
+# fast_dev_run: True
+# precision: 16-mixed

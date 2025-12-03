@@ -1,0 +1,13 @@
+name: 'Close stale issues and PRs'
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0' # 00:00 every Sunday
+
+jobs:
+  call-workflow:
+    uses: snkeos/ana-workflows/.github/workflows/misc_issue_cleanup.yaml@v5.3.0
+    secrets: inherit
+    with:
+      days-before-stale: 63
+      days-before-close: 21

@@ -1,0 +1,58 @@
+defaults:
+  - ../mlops@mlops: clearml
+  - _self_
+
+
+mlops:
+  task_name: Data Generation
+  execute_on_cluster: true # set to false if you want to execute locally (not recommended if you care about traceability)
+  queue_name: 30GiRAM-6tCPU # this is the queue to be used for data related jobs
+  tags: # you can add tags to the data generation task
+
+datasets:
+  train: # can have any meaningful name
+    sources: # can be patientlists (*.json) or file lists (*.txt) pointing to h5 files. In the case of h5 files execution_config has to be empty
+      # - github patientlists shall have the form: https://api.github.com/repos/{organisation}/{repository}/contents/{file or folder path}?ref={branch or commitid}
+      # - /home/tobias.emrich/git/ml-bodyparcellation/bodyparcellation/total_segmentator_patients_v2_TRAIN_small.json
+      # - /home/tobias.emrich/git/ml-bodyparcellation/bodyparcellation/files.txt
+      # - clearml://<dataset_id> or clearml://<dataset_id>/patientlist.json
+      # - lakefs://bodyparcellation-annotation/BPA_DEV/patients_annotated_objects_enriched.json
+      - https://api.github.com/repos/snkeos/patientlists/contents/TESTDATA/TotalSegmentatorV2-small.json?ref=TESTDATA
+
+    execution_config: # necessary for the data engineering service. keep empty in case of existing h5 files
+      handler_name: DATAGEN_BODYMODELS
+      endpoint: bodyparcellation.mldataengineeringservice.dainmlops.snkeos.dev
+      skip_failing_patients: false
+      secure: true
+      reset_after_failure: true
+      job_template: # This content needs to be adapted to your data job (just a simple example for 3D segmentations)
+        JobType: DATAGEN_BPA
+        Options:
+          outputPath: NOT_RELEVANT # This is a required field by DJPA jobs writing H5 without the GRPC service, so we keep it for compatibility
+          preprocessor:
+            apply_abs: false
+            shift_to_pos: false
+            background_value: "min"
+            sigma_gaussian_blur_before_reslicing: 0.5
+            resolution: 10.0
+            rescaling: "None"
+          data_provider:
+            use_stage_brainbook: true
+            query_labels: false
+            parcels:
+              - Adrenal Gland Left
+              - Aorta
+              - Atrial Auricular Appendage Left
+              - Bladder
+      h5_saver_fn: # specify the function that will convert service results to h5 files (again simple seg example)
+        _target_: datageneration.jobresultsaver.save_sliceset_and_labels
+        _partial_: True
+    dry_run: false # true will run the data generation without generating a clearml dataset (for debugging)
+    output_dataset:
+      project: ${mlops.project_name}
+      dataset_name: minimal-total-segmentator
+    previews: # keep empty if you don't want any previews generated
+      _target_: datageneration.preview.ProjectionPreview
+      h5_image_key: image
+      image_projection_axis: 1 # set to None if you already have 2D images
+      image_projection: average # average or max

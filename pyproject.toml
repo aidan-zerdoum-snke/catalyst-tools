@@ -1,0 +1,212 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["ml_py_project", "ml_py_project.utils", "ml_py_project_tests"]
+
+[tool.setuptools.package-dir]
+"ml_py_project" = "src/ml_py_project"
+"ml_py_project_tests" = "tests"
+
+[tool.setuptools.package-data]
+"ml_py_project" = ["config/**/*.yaml"]
+"ml_py_project_tests" = ["templates/*"]
+
+[project]
+name = "ml_py_project"
+dynamic = ["version"]
+requires-python = ">=3.12"
+readme = "README.md"
+license.file = "LICENSE.txt"
+classifiers = [
+    "Intended Audience :: Healthcare Industry",
+    "Environment :: Console",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "License :: SnkeOS Internal",
+    "Private :: Do not Upload",
+]
+dependencies = ["datageneration", "snketorch>=2.6.0", "rootutils"]
+
+[dependency-groups]
+dev = ["types-pyyaml"]
+
+[tool.uv.sources]
+allegroai = { index = "allegroai" }
+
+[[tool.uv.index]]
+url = "http://desvpycache02.brainlab.net:8080/root/trunk/+simple/"
+[[tool.uv.index]]
+url = "http://desvpycache01.brainlab.net:8080/root/trunk/+simple/"
+[[tool.uv.index]]
+name = "allegroai"
+url = "https://shared:HF6w0RbukY@packages.allegro.ai/repository/allegroai/simple/"
+
+[tool.setuptools_scm]
+fallback_version = "0.0.1"
+
+[tool.liccheck]
+# make sure licenses are in sync with ana-workflows and parent template
+# when adding new one, check for SPDX identifier at https://spdx.org/licenses/
+authorized_licenses = [
+    "Apache-2.0",
+    "apache 2.0",
+    "Apache License 2.0",
+    "Apache License v2.0",
+    "Apache-2.0 AND MIT",
+    "apache software license",
+    "Apache Software",
+    "apache",
+    "BSD-2-Clause",
+    "2-Clause BSD",
+    "BSD-3-Clause",
+    "3-Clause BSD",
+    "bsd license",
+    "bsd",
+    "FreeBSD",
+    "FreeBSD license",
+    "HPND",
+    "Historical Permission Notice and Disclaimer",
+    "Historical Permission Notice and Disclaimer (HPND)",
+    "ISC",
+    "isc license (iscl)",
+    "isc license",
+    "LGPL-3.0-only",
+    "GNU Lesser General Public License v3 (LGPLv3)",
+    "gnu lgpl",
+    "MIT",
+    "MIT License",
+    "MIT-CMU",
+    "CMU License",
+    "MPL-2.0",
+    "Mozilla Public License 2.0",
+    "Mozilla Public License 2.0 (MPL 2.0)",
+    "PSF-2.0",
+    "Python Software Foundation License 2.0",
+    "Python Software Foundation License",
+    "Python Software Foundation",
+    "Python-2.0",
+    "Python License 2.0",
+    "Snke OS License",
+    "Snke OS",
+    "SnkeOS Internal",
+    "Unlicense",
+    "The Unlicense",
+    "The Unlicense (Unlicense)",
+    "ZPL-2.1",
+    "ZPL 2.1",
+    # the following have no SPDX identifier
+    "new bsd",
+    "new bsd license",
+    "simplified bsd",
+    "NVIDIA Proprietary Software",
+    "Other/Proprietary",
+    "Freely Distributable",
+    "Public Domain",
+    # Composite licenses
+    "lgpl with exceptions or zpl", # notice the SPDX "or" Clause
+]
+unauthorized_licenses = [
+    "GPL-2.0-or-later",
+    "GNU General Public License v2.0 or later",
+    "GNU General Public License v2 or later (GPLv2+)",
+    "GPL-3.0-or-later",
+    "GNU General Public License v3 or later (GPLv3+)",
+    "GNU General Public License v3.0 or later",
+    "GPL-3.0-only",
+    "GNU General Public License v3.0 only",
+    "gpl v3",
+    "gpl",
+]
+no_deps = true
+
+[tool.ruff]
+target-version = "py312"
+exclude = ["docs"]
+output-format = "full"
+respect-gitignore = true
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "W",   # pycodestyle
+    "F",   # Pyflakes
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "N",   # pep8-naming
+    "A",   # flake8-builtins
+    "Q",   # flake8-quotes
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "PIE", # flake8-pie
+    "G",   # flake8-logging-format
+    "LOG", # flake8-logging
+    "D",   # pydocstyle
+    "S",   # flake8-bandit
+    "PGH", # pygrep-hooks
+    "PT",  # flake8-pytest-style
+    "RUF", # Ruff-specific rules
+]
+extend-ignore = [
+    "G004",   # Logging statement uses f-string
+    "RUF100", # Unused `noqa` directive. For flake8 compatibility
+    "D105",   # Undocumented magic method
+    "D107",   # Missing docstring in __init__
+    "D401",   # First line of docstring should be in imperative mood
+    "E203",   # Whitespace before ':'. This is incompatible with pep8, and black.
+    "E402",   # Module level import not at top of file
+    "W605",   # Invalid escape sequence
+    "S101",   # Using assert keyword
+]
+preview = true
+explicit-preview-rules = true
+pycodestyle.max-line-length = 120
+pydocstyle.convention = "numpy"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src/"]
+required_plugins = ["pytest-cov"]
+addopts = [
+    "-rfE",
+    "--verbose",
+    "--cache-clear",
+    "--strict-config",
+    "--strict-markers",
+    "--tb=line",
+    "--color=yes",
+    "--capture=no",
+    "--showlocals",
+]
+markers = ["unit", "validation"]
+testpaths = ["tests/"]
+
+[tool.coverage]
+run.source = ["src/"]
+run.omit = ["tests/*", "__init__.py"]
+run.relative_files = true
+run.branch = true
+report.ignore_errors = true
+report.show_missing = true
+report.skip_covered = false
+report.skip_empty = true
+
+[tool.docformatter]
+in-place = true
+wrap-summaries = 120
+wrap-descriptions = 120
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+allow_redefinition = true
+check_untyped_defs = true

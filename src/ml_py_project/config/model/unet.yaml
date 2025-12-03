@@ -1,0 +1,87 @@
+defaults:
+  - /model_lib/model/base_model_config@_here_
+
+_target_: snketorch.training.modules.modules.SnkeModule
+# https://snketorch.dainmlops.snkeos.dev/snketorch.training.modules.html#snketorch.training.modules.modules.SnkeModule
+network_adaptor_factory:
+  _target_: snketorch.utils.adaptor.adaptor
+  _partial_: true
+  input_args: [image]
+  tensor_conversion: raw
+metric_flatten_converter:
+  label_names: ${concatenate:['Background'],${misc.label_names}}
+model:
+  _target_: snketorch.nn.divisible_pad.DivisiblePadWrapper
+  nd: 3
+  mode: replicate
+  k: ${math:"2**${len:${.net.channels}}"}
+  net:
+    _target_: monai.networks.nets.UNet
+    spatial_dims: 3
+    in_channels: 1
+    out_channels: ${math:"1+${len:${misc.label_names}}"}
+    channels:
+      - 8
+      - 16
+      - 32
+    strides:
+      - 2
+      - 2
+    num_res_units: 2
+postprocessing:
+  binarize:
+    transforms:
+      - _target_: monai.transforms.AsDiscreted
+        argmax: true
+        to_onehot: ${math:"1+${len:${misc.label_names}}"}
+        dtype:
+          _target_: snketorch.utils.utils.torch_dtype
+          dtype: long
+        keys:
+          - pred
+        dim: 1
+criterion:
+  losses:
+    dice_ce:
+      module:
+        _target_: monai.losses.DiceCELoss
+        include_background: false
+        to_onehot_y: true
+        softmax: true
+metrics:
+  - metric:
+      _target_: monai.metrics.DiceMetric
+      include_background: true
+    name: Dice
+    run_on_dataloaders:
+      - dev
+    postproccesing_step: binarize
+  - metric:
+      _target_: monai.metrics.DiceMetric
+      reduction: mean_batch
+    name: ClassDice
+    run_on_dataloaders:
+      - dev
+    postproccesing_step: binarize
+optimizer:
+  _target_: torch.optim.Adam
+  _partial_: True
+  lr: 1e-2
+inferers: # for evaluation and onnx model export
+  evaluation:
+    onnx:
+      graph_optimization_level: ORT_ENABLE_EXTENDED
+      half_precision: false
+      ort_providers:
+        - CUDAExecutionProvider
+      export_kwargs:
+        input_names:
+          - volume
+        output_names:
+          - pred
+        dynamic_axes:
+          volume: { 0: "1", 1: "1", 2: "shape_z", 3: "shape_y", 4: "shape_x" }
+          pred: { 0: "1", 1: "4", 2: "shape_z", 3: "shape_y", 4: "shape_x" }
+example_input:
+  shape: [1, 1, 64, 64, 64] # [batch_size, channels, depth, height, width]
+  dtype: float32

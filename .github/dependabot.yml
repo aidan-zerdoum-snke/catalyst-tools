@@ -1,0 +1,25 @@
+version: 2
+registries:
+  github:
+    type: git
+    url: https://github.com
+    username: x-access-token # username doesn't matter
+    password: ${{ secrets.SNKEOS_ACTIONS_WORKFLOWS_ACCESS }}
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "fix"
+    registries:
+      - github
+    groups:
+      snkeos-action-bumps:
+        patterns:
+          - "snkeos*"
+      external-action-bumps:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "snkeos*"

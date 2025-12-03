@@ -1,0 +1,78 @@
+default_language_version:
+  python: python3.12
+
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: c4a0b883114b00d8d76b479c820ce7950211c99b # v4.5.0
+  hooks:
+    - id: check-toml
+    - id: detect-private-key
+    - id: mixed-line-ending
+    - id: check-docstring-first
+    - id: check-yaml
+    - id: debug-statements
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+      exclude: ^tests/fixtures/
+
+- repo: local
+  hooks:
+  - id: liccheck-wrapper
+    name: License Check Wrapper
+    entry: bash -c 'tmpfile=$(mktemp) && trap "rm -f $tmpfile" EXIT && pip freeze | grep -vi "^allegroai" > "$tmpfile" && liccheck -r "$tmpfile"'
+    language: system
+    pass_filenames: false
+    types: [python]
+
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: 2c8dce6094fa2b4b668e74f694ca63ceffd38614 # v0.9.9
+  hooks:
+    - id: ruff
+      args:
+        - --output-format
+        - full
+        - --fix
+      types_or: [python, pyi, jupyter]
+    - id: ruff-format
+      types_or: [python, pyi, jupyter]
+
+- repo: https://github.com/Lucas-C/pre-commit-hooks
+  rev: c8df1b3c66b1e0d388a690862ff8e7476092b259 # v1.4.2
+  hooks:
+    - id: insert-license
+      files: \.py$
+      args: ["--use-current-year"]
+    - id: remove-tabs
+
+- repo: https://github.com/executablebooks/mdformat
+  rev: e4610eb89da7633170df4c298347558c914780d9 # 0.7.19
+  hooks:
+    - id: mdformat
+      args: ["--number"]
+      additional_dependencies:
+        - mdformat-gfm==0.4.1
+        - mdformat-tables==1.0.0
+        - mdformat_frontmatter==2.0.8
+
+- repo: https://github.com/shellcheck-py/shellcheck-py
+  rev: a23f6b85d0fdd5bb9d564e2579e678033debbdff # v0.10.0.1
+  hooks:
+    - id: shellcheck
+
+- repo: local
+  hooks:
+    - id: mypy
+      name: mypy
+      entry: bash -c 'uv pip install -r pyproject.toml --group dev && python -m mypy --ignore-missing-imports --show-traceback src/'
+      language: system
+      types: [python]
+      pass_filenames: false
+      require_serial: true
+      verbose: true
+
+-   repo: https://github.com/asottile/pyupgrade
+    # full SHA commit ID from v3.15.2
+    rev: 12af25eb252deaaecb6b259df40d01f42e716dc3
+    hooks:
+    -   id: pyupgrade
+        args: [--py312-plus]
