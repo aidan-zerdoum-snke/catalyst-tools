@@ -1,4 +1,4 @@
-## catalyst-utils
+## catalyst-tools
 
 This repository contains tools provided/developed to support use of the nnUNet V2 framework as part of the TRISH Catalyst grant CAT17.
 
@@ -19,3 +19,4 @@ If you meet the requirements there you will be able to use these tools.
 3. Slicer Tools
 
 4. Data Processing Tools
+
