@@ -1,3 +1,0 @@
-SnkeOS Internal
-
-Copyright (C) 2024 Snke OS GmbH, Germany. All rights reserved.
