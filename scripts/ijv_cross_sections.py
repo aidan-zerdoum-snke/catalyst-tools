@@ -31,8 +31,8 @@ from skimage.measure import label as cc_label
 # ----------------------
 SEGTHY_LABELS = {
     1: ("Thyroid", False),
-    2: ("CCA_left"True),
-    3: ("IJV_left"True),
+    2: ("CCA_left", True),
+    3: ("IJV_left", True),
     4: ("CCA_right", True),
     5: ("IJV_right", True),
 }
