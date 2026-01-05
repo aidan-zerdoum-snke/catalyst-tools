@@ -9,10 +9,14 @@ Outputs:
 - A tall-format CSV with one row per (file, structure).
 - Optional per-slice CSVs for vessel CSA.
 
-Author: Aidan-friendly revision
 """
 
-# usage: python ijv_cross_sections.py "D:\Catalyst\SegThy\US_data\US_volunteer_dataset\ground_truth_data\US_thyroid_label" --out_dir "D:\Catalyst\SegThy\CSA_output" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12
+# usages: 
+# 
+# 1. python ijv_cross_sections.py "D:\Catalyst\SegThy\US_data\US_volunteer_dataset\ground_truth_data\US_thyroid_label" --out_dir "D:\Catalyst\SegThy\CSA_output" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12
+# 2. per slice output on MRI labels: python ijv_cross_sections.py "C:\Python\nnUNet_Catalyst\nnUNet_raw\Dataset303_SegThyMRI\labelsTr" --out_dir "C:\Python\nnUNet_Catalyst\nnUNet_raw\Dataset303_SegThyMRI\CSA_evaluation_output" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12 --per_slice
+# 3. per slice output on OG segthy dataset with OG names: python ijv_cross_sections.py "D:\Catalyst\SegThy\US_data\US_volunteer_dataset\ground_truth_data\US_thyroid_label" --out_dir "D:\Catalyst\SegThy\CSA_output" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12 --per_slice
+# 
 
 import os
 import glob
@@ -21,6 +25,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import nibabel as nib
+from nibabel.orientations import aff2axcodes 
 from scipy import ndimage
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
@@ -40,6 +45,32 @@ SEGTHY_LABELS = {
 # ----------------------
 # Utilities
 # ----------------------
+def distances_from_cranial(pts_vox, spacing, vol_shape, axis_idx, affine=None, cranial_edge='auto'):
+    """
+    Return per-point distances (mm) from the cranial edge of the volume
+    along the selected axis (0=x, 1=y, 2=z).
+    """
+    # Decide whether cranial lies at min or max index
+    cranial_is_max = True
+    if cranial_edge == 'min':
+        cranial_is_max = False
+    elif cranial_edge == 'max':
+        cranial_is_max = True
+    else:  # 'auto'
+        if affine is not None:
+            try:
+                ax = aff2axcodes(affine)[axis_idx]  # e.g., ('R','A','S')
+                if ax == 'S':  # increasing index -> Superior
+                    cranial_is_max = True
+                elif ax == 'I':  # increasing index -> Inferior
+                    cranial_is_max = False
+            except Exception:
+                pass  # fall back to max
+
+    cranial_index = (vol_shape[axis_idx] - 1) if cranial_is_max else 0
+    delta_vox = np.abs(cranial_index - pts_vox[:, axis_idx])
+    return delta_vox * spacing[axis_idx]
+
 def get_voxel_spacing(img: nib.Nifti1Image, override=None):
     """
     Return voxel spacing (x,y,z) in mm.
@@ -55,7 +86,9 @@ def load_seg(path, override_spacing=None):
     img = nib.load(path)
     data = img.get_fdata().astype(np.int16)
     spacing = get_voxel_spacing(img, override=override_spacing)
-    return data, spacing
+    affine = img.affine 
+    return data, spacing, affine
+
 
 def binary_mask(seg, label_val):
     return (seg == label_val).astype(np.uint8)
@@ -205,12 +238,12 @@ def compute_cross_sections(mask, spacing, step_mm=2.0,
 # ----------------------
 # Processing per file/label
 # ----------------------
-def process_label(seg, spacing, label_id, is_vessel, args, base_name):
+
+def process_label(seg, spacing, affine, label_id, is_vessel, args, base_name):
     mask = binary_mask(seg, label_id)
     mask = largest_component(mask)
     volume_ml = compute_volume_ml(mask, spacing)
 
-    # Initialize metrics
     mean_area = std_area = min_area = max_area = np.nan
     num_samples = 0
     per_slice_csv = ""
@@ -226,18 +259,30 @@ def process_label(seg, spacing, label_id, is_vessel, args, base_name):
         valid = areas_mm2[np.isfinite(areas_mm2) & (areas_mm2 > 0)]
         if valid.size:
             mean_area = float(valid.mean())
-            std_area = float(valid.std())
-            min_area = float(valid.min())
-            max_area = float(valid.max())
+            std_area  = float(valid.std())
+            min_area  = float(valid.min())
+            max_area  = float(valid.max())
         num_samples = int(len(areas_mm2))
+
         if args.per_slice_out:
-            per_slice_csv = os.path.join(args.out_dir, f"{base_name}_{SEGTHY_LABELS[label_id][0]}_slices.csv")
+            per_slice_csv = os.path.join(
+                args.out_dir, f"{base_name}_{SEGTHY_LABELS[label_id][0]}_slices.csv"
+            )
+            axis_map = {"x": 0, "y": 1, "z": 2}
+            axis_idx = axis_map.get(args.distance_axis, 2)  # default z
+
+            dists_mm = distances_from_cranial(
+                pts_vox, spacing, seg.shape, axis_idx,
+                affine=affine, cranial_edge=args.cranial_edge
+            )
+
             df_sl = pd.DataFrame({
                 "file": base_name,
                 "structure": SEGTHY_LABELS[label_id][0],
                 "label_id": label_id,
                 "arc_length_mm": s_mm,
-                "cross_section_mm2": areas_mm2
+                "cross_section_mm2": areas_mm2,
+                "distance_from_cranial_mm": dists_mm 
             })
             df_sl.to_csv(per_slice_csv, index=False)
 
@@ -265,23 +310,20 @@ def detect_present_labels(seg):
     return [l for l in found if l in SEGTHY_LABELS]
 
 def process_file(path, args):
-    seg, spacing = load_seg(path, override_spacing=args.override_spacing_mm)
+    seg, spacing, affine = load_seg(path, override_spacing=args.override_spacing_mm)
     base = os.path.splitext(os.path.basename(path))[0]
-    if base.endswith('.nii'):  # handle double extension
+    if base.endswith('.nii'):
         base = base[:-4]
-
     labels_present = detect_present_labels(seg)
     summaries = []
-
     if not labels_present:
-        # Fallback: if only thyroid expected in some subsets, try label=1
         labels_present = [1] if (seg > 0).any() else []
-
     for lid in labels_present:
         name, is_vessel = SEGTHY_LABELS[lid]
         try:
-            summary = process_label(seg, spacing, lid, is_vessel, args, base)
+            summary = process_label(seg, spacing, affine, lid, is_vessel, args, base)
             summaries.append(summary)
+
             if is_vessel:
                 print(f"[OK] {base} | {name}: vol={summary['volume_ml']:.3f} mL, "
                       f"mean CSA={summary['mean_area_mm2'] if np.isfinite(summary['mean_area_mm2']) else np.nan:.1f} mm^2 "
@@ -299,15 +341,47 @@ def process_file(path, args):
 def main():
     parser = argparse.ArgumentParser(
         description="Compute volumetrics + CSA for SegThy labels (thyroid, CCA, IJV) from .nii/.nii.gz.")
-    parser.add_argument("in_dir", type=str, help="Input folder with .nii / .nii.gz files")
-    parser.add_argument("--out_dir", type=str, default="segthy_results", help="Output folder for CSVs")
-    parser.add_argument("--step_mm", type=float, default=2.0, help="Arc-length sampling interval (mm)")
-    parser.add_argument("--plane_size_mm", type=float, default=25.0, help="Size of orthogonal sampling plane (mm)")
-    parser.add_argument("--res_mm", type=float, default=0.5, help="In-plane sampling resolution (mm)")
-    parser.add_argument("--slab_mm", type=float, default=0.0, help="Slab thickness along tangent (mm); 0 for single plane")
-    parser.add_argument("--per_slice_out", action="store_true", help="Write per-slice CSA CSVs for vessel labels")
-    parser.add_argument("--override_spacing_mm", type=float, nargs=3, default=None,
+    parser.add_argument("in_dir", 
+                        type=str, 
+                        help="Input folder with .nii / .nii.gz files")
+    parser.add_argument("--out_dir", 
+                        type=str, 
+                        default="segthy_results", 
+                        help="Output folder for CSVs")
+    parser.add_argument("--step_mm", 
+                        type=float, 
+                        default=2.0, 
+                        help="Arc-length sampling interval (mm)")
+    parser.add_argument("--plane_size_mm", 
+                        type=float, 
+                        default=25.0, 
+                        help="Size of orthogonal sampling plane (mm)")
+    parser.add_argument("--res_mm", 
+                        type=float, 
+                        default=0.5, 
+                        help="In-plane sampling resolution (mm)")
+    parser.add_argument("--slab_mm", 
+                        type=float, 
+                        default=0.0, 
+                        help="Slab thickness along tangent (mm); 0 for single plane")
+    parser.add_argument("--per_slice_out", 
+                        action="store_true", 
+                        help="Write per-slice CSA CSVs for vessel labels")
+    parser.add_argument("--override_spacing_mm", 
+                        type=float, 
+                        nargs=3, 
+                        default=None,
                         help="Override voxel spacing as three numbers (e.g., 0.12 0.12 0.12) if header is wrong")
+    parser.add_argument("--distance_axis", type=str, 
+                        default="z",
+                        choices=["x", "y", "z"],
+                        help="Axis used for cranial distance (default: z)")
+    parser.add_argument("--cranial_edge", 
+                        type=str, 
+                        default="auto",
+                        choices=["auto", "max", "min"],
+                        help="Cranial extreme along the chosen axis: auto (use affine if available), max (highest index), min (lowest index)")
+
 
     args = parser.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
