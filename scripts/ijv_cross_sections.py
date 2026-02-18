@@ -16,7 +16,8 @@ Outputs:
 # 1. python ijv_cross_sections.py "D:\Catalyst\SegThy\US_data\US_volunteer_dataset\ground_truth_data\US_thyroid_label" --out_dir "D:\Catalyst\SegThy\CSA_output" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12
 # 2. per slice output on MRI labels: python ijv_cross_sections.py "C:\Python\nnUNet_Catalyst\nnUNet_raw\Dataset303_SegThyMRI\labelsTr" --out_dir "C:\Python\nnUNet_Catalyst\nnUNet_raw\Dataset303_SegThyMRI\CSA_evaluation_output" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12 --per_slice
 # 3. per slice output on OG segthy dataset with OG names: python ijv_cross_sections.py "D:\Catalyst\SegThy\US_data\US_volunteer_dataset\ground_truth_data\US_thyroid_label" --out_dir "D:\Catalyst\SegThy\CSA_output" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12 --per_slice
-# 
+# 4. per slice output on synthetic dataset variants: python ijv_cross_sections.py "C:\Python\catalyst-tools\synthetic_data\Synthetic\output_volumes\labelsTr" --out_dir "C:\Python\catalyst-tools\synthetic_data\Synthetic\output_volumes\metrics" --step_mm 2.0 --plane_size_mm 25.0 --res_mm 0.12 --per_slice
+#
 
 import os
 import glob
