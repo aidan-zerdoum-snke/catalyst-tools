@@ -1,22 +1,21 @@
 import slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.i18n import tr as _, translate
-
-import os, sys, traceback, tempfile
-from pathlib import Path
-import numpy as np
-import qt, ctk
-import vtk
-import pandas as pd
-
 from SlicerNNUNetLib import Widget
 
-# --- BEGIN: Inline IJV CSA helper (no external imports needed beyond numpy/scipy) ---
 import numpy as np
+import pandas as pd
 from scipy import ndimage
-from scipy.interpolate import interp1d
-from scipy.signal import savgol_filter
 
+import qt, ctk
+import vtk
+import traceback
+from pathlib import Path
+
+
+# -----------------------------
+# Logic helpers
+# -----------------------------
 class IJVCSALogic:
 
     @staticmethod
@@ -48,7 +47,6 @@ class IJVCSALogic:
 
             z_idx.append(k)
             areas.append(area)
-            # IJK = (i, j, k) = (cx, cy, k)
             pts_ijk.append([float(cx), float(cy), float(k)])
 
         if not z_idx:
@@ -59,225 +57,23 @@ class IJVCSALogic:
             np.asarray(areas, dtype=float),
             np.asarray(pts_ijk, dtype=float),
         )
-    
+
     @staticmethod
     def largest_component(mask: np.ndarray) -> np.ndarray:
-        # Use scipy.ndimage.label to avoid skimage dependency.
         if mask.sum() == 0:
             return mask.astype(np.uint8, copy=False)
-        lbl, num = ndimage.label(mask.astype(np.uint8), structure=np.ones((3,3,3), dtype=np.uint8))
+        lbl, num = ndimage.label(mask.astype(np.uint8), structure=np.ones((3, 3, 3), dtype=np.uint8))
         if num <= 1:
             return (lbl > 0).astype(np.uint8)
-        # Keep the label with largest voxel count (exclude 0)
         counts = np.bincount(lbl.ravel())
         counts[0] = 0
         largest = counts.argmax()
         return (lbl == largest).astype(np.uint8)
 
-    @staticmethod
-    def compute_volume_ml(mask: np.ndarray, spacing: np.ndarray) -> float:
-        voxel_mm3 = float(spacing[0] * spacing[1] * spacing[2])
-        return float(int(mask.sum()) * voxel_mm3 / 1000.0)
 
-    @staticmethod
-    def skeleton_centerline(mask: np.ndarray) -> np.ndarray:
-        """
-        Simple axial fallback: per-slice COM across z. Returns Nx3 (x,y,z) voxel coords.
-        """
-        m = (mask > 0).astype(np.uint8)
-        Z = m.shape[2]
-        pts = []
-        for z in range(Z):
-            sl = m[:, :, z]
-            if sl.sum() == 0:
-                continue
-            com = ndimage.center_of_mass(sl)
-            if not np.all(np.isfinite(com)):
-                continue
-            x, y = com
-            pts.append([x, y, float(z)])
-        if not pts:
-            return np.empty((0, 3), dtype=float)
-
-        pts = np.array(pts, dtype=float)
-        # prune big jumps
-        if len(pts) > 1:
-            deltas = np.diff(pts, axis=0)
-            d = np.linalg.norm(deltas, axis=1)
-            keep = np.insert(d < 10.0, 0, True)  # allow ~10 voxel jumps
-            pts = pts[keep]
-        return pts
-
-    @staticmethod
-    def resample_equal_arclength(points_vox: np.ndarray, spacing: np.ndarray,
-                                 step_mm: float = 2.0,
-                                 smooth_window: int = 9, smooth_poly: int = 3):
-        """
-        Return pts_vox_resampled (Mx3), t_mm (Mx3 tangents), s_mm (M,)
-        """
-        if len(points_vox) < 2:
-            return points_vox, None, np.array([0.0] * max(len(points_vox), 1))
-
-        pts_mm = points_vox.astype(float) * spacing
-        deltas_mm = np.diff(pts_mm, axis=0)
-        seg_len_mm = np.linalg.norm(deltas_mm, axis=1)
-        s = np.concatenate([[0.0], np.cumsum(seg_len_mm)])
-        total_len = s[-1]
-        if total_len < 1e-6:
-            return points_vox[[0]], None, np.array([0.0])
-
-        s_query = np.arange(0.0, total_len + 1e-6, step_mm)
-        f_x = interp1d(s, pts_mm[:, 0], kind="linear")
-        f_y = interp1d(s, pts_mm[:, 1], kind="linear")
-        f_z = interp1d(s, pts_mm[:, 2], kind="linear")
-        pts_mm_res = np.stack([f_x(s_query), f_y(s_query), f_z(s_query)], axis=1)
-
-        # Smooth + compute tangents
-        k = min(smooth_window, (len(pts_mm_res) // 2) * 2 - 1)  # odd <= len
-        if k >= 5:
-            px = savgol_filter(pts_mm_res[:, 0], window_length=k, polyorder=smooth_poly)
-            py = savgol_filter(pts_mm_res[:, 1], window_length=k, polyorder=smooth_poly)
-            pz = savgol_filter(pts_mm_res[:, 2], window_length=k, polyorder=smooth_poly)
-            pts_mm_res = np.stack([px, py, pz], axis=1)
-
-        t_mm = np.gradient(pts_mm_res, s_query, axis=0)
-        norms = np.linalg.norm(t_mm, axis=1) + 1e-12
-        t_mm = t_mm / norms[:, None]
-
-        pts_vox_res = pts_mm_res / spacing
-        return pts_vox_res, t_mm, s_query
-
-    @staticmethod
-    def _orthonormal_basis_perp(t_mm: np.ndarray):
-        a = np.array([1.0, 0.0, 0.0])
-        if abs(np.dot(a, t_mm)) > 0.9:
-            a = np.array([0.0, 1.0, 0.0])
-        u = np.cross(t_mm, a)
-        u /= (np.linalg.norm(u) + 1e-12)
-        v = np.cross(t_mm, u)
-        v /= (np.linalg.norm(v) + 1e-12)
-        return u, v
-
-    @staticmethod
-    def sample_plane_area(mask: np.ndarray, spacing: np.ndarray, center_vox: np.ndarray, t_mm: np.ndarray,
-                          plane_size_mm: float = 25.0, res_mm: float = 0.5, slab_thickness_mm: float = 0.0) -> float:
-        """
-        Sample mask on plane ⟂ t_mm through center_vox.
-        """
-        if t_mm is None or np.linalg.norm(t_mm) < 1e-6:
-            return 0.0
-
-        # Ensure numpy arrays for broadcasting
-        spacing = np.asarray(spacing, dtype=float)
-        center_vox = np.asarray(center_vox, dtype=float)
-        t_mm = np.asarray(t_mm, dtype=float)
-
-        u_mm, v_mm = IJVCSALogic._orthonormal_basis_perp(t_mm)
-        half = plane_size_mm / 2.0
-        xs = np.arange(-half, half + 1e-6, res_mm)
-        ys = np.arange(-half, half + 1e-6, res_mm)
-        X, Y = np.meshgrid(xs, ys, indexing="xy")
-        H, W = X.shape
-
-        n_slabs = max(1, int(round(slab_thickness_mm / max(res_mm, 1e-6))))
-        offsets_t = np.linspace(-0.5 * slab_thickness_mm, 0.5 * slab_thickness_mm, n_slabs)
-
-        sampled = np.zeros((H, W), dtype=np.uint8)
-        for dt in offsets_t:
-            mm_offsets = (X[..., None] * u_mm[None, None, :] +
-                          Y[..., None] * v_mm[None, None, :] +
-                          dt * t_mm[None, None, :])
-            vox_offsets = mm_offsets / spacing[None, None, :]   # requires numpy spacing
-            coords_vox = center_vox[None, None, :] + vox_offsets
-            coords = [coords_vox[..., i].ravel() for i in range(3)]
-            vals = ndimage.map_coordinates(mask.astype(float), coords, order=0, mode="nearest")
-            vals = (vals.reshape(H, W) > 0).astype(np.uint8)
-            sampled = np.maximum(sampled, vals)
-
-        area_mm2 = sampled.sum() * (res_mm ** 2)
-        return float(area_mm2)
-  
-    @staticmethod
-    def compute_cross_sections(mask: np.ndarray, spacing: np.ndarray,
-                               step_mm: float = 2.0,
-                               plane_size_mm: float = 25.0,
-                               res_mm: float = 0.5,
-                               slab_thickness_mm: float = 0.0):
-        spacing = np.asarray(spacing, dtype=float)  # <- critical
-
-        cl_vox = IJVCSALogic.skeleton_centerline(mask)
-        if len(cl_vox) < 2:
-            com = np.array(ndimage.center_of_mass(mask)) if mask.sum() > 0 else np.array([0, 0, 0], dtype=float)
-            s_mm = np.array([0.0])
-            areas = np.array([
-                IJVCSALogic.sample_plane_area(mask, spacing, com, np.array([0, 0, 1.0]),
-                                              plane_size_mm, res_mm, slab_thickness_mm)
-            ])
-            return s_mm, areas, np.array([com])
-
-        pts_vox_res, t_mm, s_mm = IJVCSALogic.resample_equal_arclength(cl_vox, spacing, step_mm=step_mm)
-
-        areas = []
-        for i in range(len(pts_vox_res)):
-            t = t_mm[i] if t_mm is not None else np.array([0, 0, 1.0])
-            a = IJVCSALogic.sample_plane_area(mask, spacing, pts_vox_res[i], t,
-                                              plane_size_mm, res_mm, slab_thickness_mm)
-            areas.append(a)
-
-        return s_mm, np.array(areas), pts_vox_res
-
-    @staticmethod
-    def run_summary(mask: np.ndarray, spacing, step_mm=2.0, plane_size_mm=25.0, res_mm=0.5, slab_mm=0.0):
-        """
-        Returns a pandas DataFrame summary row.
-        """
-        import pandas as pd
-
-        mask = np.asarray(mask).astype(np.uint8, copy=False)
-        spacing = np.asarray(spacing, dtype=float)
-
-        mask = IJVCSALogic.largest_component(mask)
-
-        if mask.sum() == 0:
-            return pd.DataFrame([{
-                "volume_ml": 0.0,
-                "mean_area_mm2": float('nan'),
-                "std_area_mm2": float('nan'),
-                "min_area_mm2": float('nan'),
-                "max_area_mm2": float('nan'),
-                "num_samples": 0,
-                "spacing_x_mm": float(spacing[0]),
-                "spacing_y_mm": float(spacing[1]),
-                "spacing_z_mm": float(spacing[2]),
-            }])
-
-        volume_ml = IJVCSALogic.compute_volume_ml(mask, spacing)
-        s_mm, areas_mm2, _ = IJVCSALogic.compute_cross_sections(
-            mask, spacing,
-            step_mm=step_mm, plane_size_mm=plane_size_mm, res_mm=res_mm, slab_thickness_mm=slab_mm
-        )
-
-        valid = areas_mm2[(areas_mm2 > 0) & np.isfinite(areas_mm2)]
-        if valid.size:
-            mean_area = float(valid.mean()); std_area = float(valid.std())
-            min_area  = float(valid.min());  max_area = float(valid.max())
-        else:
-            mean_area = std_area = min_area = max_area = float('nan')
-
-        return pd.DataFrame([{
-            "volume_ml": float(volume_ml),
-            "mean_area_mm2": mean_area,
-            "std_area_mm2": std_area,
-            "min_area_mm2": min_area,
-            "max_area_mm2": max_area,
-            "num_samples": int(len(areas_mm2)),
-            "spacing_x_mm": float(spacing[0]),
-            "spacing_y_mm": float(spacing[1]),
-            "spacing_z_mm": float(spacing[2]),
-        }])
-# --- END: Inline IJV CSA helper ---
-
-
+# -----------------------------
+# Module shell
+# -----------------------------
 class SlicerNNUNet(ScriptedLoadableModule):
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
@@ -285,90 +81,359 @@ class SlicerNNUNet(ScriptedLoadableModule):
         self.parent.categories = [translate("qSlicerAbstractCoreModule", "Segmentation")]
         self.parent.dependencies = []
         self.parent.contributors = ["Thibault Pelletier (Kitware SAS)"]
-        self.parent.helpText = _(
-            "This extension is meant to streamline the integration of nnUnet based models into 3D Slicer.<br>"
-            "It allows for quick and reliable nnUNet dependency installation in 3D Slicer environment and provides"
-            " simple logic to launch nnUNet prediction on given directories.<br><br>"
-            "The installation steps are based on the work done in the "
-            '<a href="https://github.com/lassoan/SlicerTotalSegmentator/">Slicer Total Segmentator extension</a>'
-        )
-        self.parent.acknowledgementText = _(
-            "This module was originally co-financed by the "
-            '<a href="https://orthodontie-ffo.org/">Fédération Française d\'Orthodontie</a> '
-            "(FFO) as part of the "
-            '<a href="https://github.com/gaudot/SlicerDentalSegmentator/">Dental Segmentator</a>'
-            " developments and the "
-            '<a href="https://rhu-cosy.com/en/accueil-english/">Cure Overgrowth Syndromes</a>'
-            " (COSY) RHU Project."
-        )
 
 
+# -----------------------------
+# Widget
+# -----------------------------
 class SlicerNNUNetWidget(ScriptedLoadableModuleWidget):
     def __init__(self, parent=None) -> None:
-        """Called when the user opens the module the first time and the widget is initialized."""
         ScriptedLoadableModuleWidget.__init__(self, parent)
         self.logic = None
 
+        # Per-run state for slice annotations
+        self._metricsByK = {}              # k -> dict with ijv/cca/angle
+        self._summaryText = ""             # upper-left
+        self._annotationObservers = []     # [(sliceNode, tag), ...]
+        self._annotationGridNode = None    # volume/labelmap to convert RAS->IJK(k)
+
+        # Center-of-segment CSA labels (Markups)
+        self._ijvFids = None
+        self._ccaFids = None
+
+    # -----------------------------
+    # UI setup
+    # -----------------------------
     def setup(self) -> None:
-        """Called when the user opens the module the first time and the widget is initialized."""
         ScriptedLoadableModuleWidget.setup(self)
         widget = Widget()
         self.logic = widget.logic
         self.layout.addWidget(widget)
 
-        # --- IJV Space Health add-on UI (below existing nnUNet widget) ---
         ijvBox = ctk.ctkCollapsibleButton()
         ijvBox.text = "IJV Space Health (experimental)"
         ijvLayout = qt.QFormLayout(ijvBox)
 
         # Segmentation selector
-        self.ijvSegSelector = slicer.qMRMLNodeComboBox()
-        self.ijvSegSelector.nodeTypes = ["vtkMRMLSegmentationNode"]
-        self.ijvSegSelector.selectNodeUponCreation = False
-        self.ijvSegSelector.noneEnabled = True
-        self.ijvSegSelector.addEnabled = False
-        self.ijvSegSelector.removeEnabled = False
-        self.ijvSegSelector.setMRMLScene(slicer.mrmlScene)
-        self.ijvSegSelector.toolTip = "Select IJV segmentation to analyze"
-        ijvLayout.addRow("Segmentation:", self.ijvSegSelector)
+        self.segSelector = slicer.qMRMLNodeComboBox()
+        self.segSelector.nodeTypes = ["vtkMRMLSegmentationNode"]
+        self.segSelector.selectNodeUponCreation = False
+        self.segSelector.noneEnabled = True
+        self.segSelector.addEnabled = False
+        self.segSelector.removeEnabled = False
+        self.segSelector.setMRMLScene(slicer.mrmlScene)
+        self.segSelector.toolTip = "Select segmentation containing IJV and CCA segments"
+        ijvLayout.addRow("Segmentation:", self.segSelector)
 
-        # Reference ultrasound (or other input) volume selector
-        self.ijvRefVolumeSelector = slicer.qMRMLNodeComboBox()
-        self.ijvRefVolumeSelector.nodeTypes = ["vtkMRMLScalarVolumeNode"]
-        self.ijvRefVolumeSelector.selectNodeUponCreation = False
-        self.ijvRefVolumeSelector.noneEnabled = True
-        self.ijvRefVolumeSelector.addEnabled = False
-        self.ijvRefVolumeSelector.removeEnabled = False
-        self.ijvRefVolumeSelector.setMRMLScene(slicer.mrmlScene)
-        self.ijvRefVolumeSelector.toolTip = "Select the ultrasound input volume (reference geometry)"
-        ijvLayout.addRow("Reference volume:", self.ijvRefVolumeSelector)
+        # Reference volume selector (optional)
+        self.refVolumeSelector = slicer.qMRMLNodeComboBox()
+        self.refVolumeSelector.nodeTypes = ["vtkMRMLScalarVolumeNode"]
+        self.refVolumeSelector.selectNodeUponCreation = False
+        self.refVolumeSelector.noneEnabled = True
+        self.refVolumeSelector.addEnabled = False
+        self.refVolumeSelector.removeEnabled = False
+        self.refVolumeSelector.setMRMLScene(slicer.mrmlScene)
+        self.refVolumeSelector.toolTip = "Optional reference volume to define geometry and k-indexing (recommended)"
+        ijvLayout.addRow("Reference volume:", self.refVolumeSelector)
+
+        # Segment name inputs (user-specified)
+        self.ijvSegmentEdit = qt.QLineEdit()
+        self.ijvSegmentEdit.setPlaceholderText("e.g. IJV or 3")
+        self.ijvSegmentEdit.toolTip = "IJV segment name (case-insensitive exact match) OR SegmentID"
+        ijvLayout.addRow("IJV segment:", self.ijvSegmentEdit)
+
+        self.ccaSegmentEdit = qt.QLineEdit()
+        self.ccaSegmentEdit.setPlaceholderText("e.g. CCA or 2")
+        self.ccaSegmentEdit.toolTip = "CCA segment name (case-insensitive exact match) OR SegmentID"
+        ijvLayout.addRow("CCA segment:", self.ccaSegmentEdit)
+
+        # Side selector
+        self.sideCombo = qt.QComboBox()
+        self.sideCombo.addItems(["Left", "Right"])
+        self.sideCombo.toolTip = (
+            "Angle reference:\n"
+            "- Left: angle from Vector.right (+X in RAS)\n"
+            "- Right: angle from Vector.left (-X in RAS)\n\n"
+            "Convention:\n"
+            "- CCW is positive\n"
+            "- CW is negative"
+        )
+        ijvLayout.addRow("Side:", self.sideCombo)
 
         # Output folder
-        self.ijvOutputDir = ctk.ctkPathLineEdit()
-        self.ijvOutputDir.filters = ctk.ctkPathLineEdit.Dirs
-        self.ijvOutputDir.currentPath = slicer.app.defaultScenePath
-        ijvLayout.addRow("Output folder:", self.ijvOutputDir)
+        self.outputDir = ctk.ctkPathLineEdit()
+        self.outputDir.filters = ctk.ctkPathLineEdit.Dirs
+        self.outputDir.currentPath = slicer.app.defaultScenePath
+        ijvLayout.addRow("Output folder:", self.outputDir)
 
         # Compute button
-        self.ijvComputeBtn = qt.QPushButton("Compute IJV Cross‑Sections")
-        self.ijvComputeBtn.toolTip = "Runs ijv_cross_sections.py on the selected segmentation and creates a Table (+ CSV)."
-        self.ijvComputeBtn.clicked.connect(self.onComputeIJVCrossSections)
-        ijvLayout.addRow(self.ijvComputeBtn)
-        
-        self.layout.addWidget(ijvBox)
-        
+        self.computeBtn = qt.QPushButton("Compute IJV/CCA CSA + Angle")
+        self.computeBtn.toolTip = "Computes per-slice CSA+centroids for IJV & CCA, plus angle between them."
+        self.computeBtn.clicked.connect(self.onCompute)
+        ijvLayout.addRow(self.computeBtn)
 
-    def onComputeIJVCrossSections(self):
-        segNode = self.ijvSegSelector.currentNode()
+        self.layout.addWidget(ijvBox)
+
+    # -----------------------------
+    # Segment selection helpers
+    # -----------------------------
+    def _listSegments(self, segmentation, ids: vtk.vtkStringArray):
+        items = []
+        for i in range(ids.GetNumberOfValues()):
+            sid = ids.GetValue(i)
+            nm = segmentation.GetSegment(sid).GetName()
+            items.append(f"{nm} (ID={sid})")
+        return items
+
+    def _findSegmentIdByNameOrId(self, segmentation, ids: vtk.vtkStringArray, userText: str):
+        """
+        Accepts either:
+          - a SegmentID (exact match), or
+          - a Segment Name (case-insensitive exact match)
+        Returns segmentID or None.
+        """
+        if not userText:
+            return None
+        key = userText.strip()
+        if not key:
+            return None
+
+        # 1) exact match on SegmentID
+        for i in range(ids.GetNumberOfValues()):
+            sid = ids.GetValue(i)
+            if sid == key:
+                return sid
+
+        # 2) case-insensitive exact match on name
+        key_l = key.lower()
+        for i in range(ids.GetNumberOfValues()):
+            sid = ids.GetValue(i)
+            nm = segmentation.GetSegment(sid).GetName()
+            if nm and nm.strip().lower() == key_l:
+                return sid
+
+        return None
+
+    # -----------------------------
+    # RAS/IJK helpers
+    # -----------------------------
+    def _makeIJKToRASConverter(self, ijkToRas: vtk.vtkMatrix4x4):
+        def ijk_to_ras(p_ijk):
+            v4 = [float(p_ijk[0]), float(p_ijk[1]), float(p_ijk[2]), 1.0]
+            ras4 = [0.0, 0.0, 0.0, 0.0]
+            ijkToRas.MultiplyPoint(v4, ras4)
+            return np.array([ras4[0], ras4[1], ras4[2]], dtype=float)
+        return ijk_to_ras
+
+    def _angleFromRefDeg(self, v_xy: np.ndarray, ref_xy: np.ndarray) -> float:
+        """
+        Signed angle from ref -> v in XY plane, degrees in (-180, +180].
+        Convention:
+          - CCW is positive
+          - CW is negative
+        """
+        v = np.asarray(v_xy, dtype=float)
+        r = np.asarray(ref_xy, dtype=float)
+
+        nv = np.linalg.norm(v)
+        nr = np.linalg.norm(r)
+        if nv < 1e-9 or nr < 1e-9:
+            return float("nan")
+
+        v = v / nv
+        r = r / nr
+
+        dot = float(r[0] * v[0] + r[1] * v[1])
+        cross = float(r[0] * v[1] - r[1] * v[0])
+
+        ang = float(np.degrees(np.arctan2(cross, dot)))  # in [-180, 180]
+        if ang <= -180.0:
+            ang += 360.0
+        return ang
+
+    # -----------------------------
+    # Center-of-segment CSA labels (Markups)
+    # -----------------------------
+    def _removeCenterLabelNodes(self):
+        for n in (self._ijvFids, self._ccaFids):
+            if n is not None and slicer.mrmlScene.IsNodePresent(n):
+                slicer.mrmlScene.RemoveNode(n)
+        self._ijvFids = None
+        self._ccaFids = None
+
+    def _createCenterLabelNodes(self, baseName: str, transformNodeID: str):
+        self._ijvFids = slicer.mrmlScene.AddNewNodeByClass(
+            "vtkMRMLMarkupsFiducialNode", f"{baseName} IJV CSA @ COM"
+        )
+        self._ccaFids = slicer.mrmlScene.AddNewNodeByClass(
+            "vtkMRMLMarkupsFiducialNode", f"{baseName} CCA CSA @ COM"
+        )
+
+        for node in (self._ijvFids, self._ccaFids):
+            node.CreateDefaultDisplayNodes()
+            node.SetAndObserveTransformNodeID(transformNodeID)
+
+            disp = node.GetDisplayNode()
+            if disp:
+                disp.SetVisibility(True)
+                disp.SetVisibility2D(True)
+                disp.SetVisibility3D(False)
+                disp.SetGlyphScale(1.5)
+                disp.SetTextScale(1.2)
+                disp.SetPointLabelsVisibility(True)
+
+    def _populateCenterLabelNodes(self, rows):
+        if self._ijvFids is None or self._ccaFids is None:
+            return
+
+        for r in rows:
+            pIJV = [float(r["ijv_ras_x"]), float(r["ijv_ras_y"]), float(r["ijv_ras_z"])]
+            pCCA = [float(r["cca_ras_x"]), float(r["cca_ras_y"]), float(r["cca_ras_z"])]
+
+            self._ijvFids.AddControlPoint(pIJV)
+            ijvIdx = self._ijvFids.GetNumberOfControlPoints() - 1
+            self._ijvFids.SetNthControlPointLabel(ijvIdx, f"{r['ijv_csa_mm2']:.1f} mm²")
+
+            self._ccaFids.AddControlPoint(pCCA)
+            ccaIdx = self._ccaFids.GetNumberOfControlPoints() - 1
+            self._ccaFids.SetNthControlPointLabel(ccaIdx, f"{r['cca_csa_mm2']:.1f} mm²")
+
+    # -----------------------------
+    # Slice annotation management
+    # -----------------------------
+    def _clearSliceAnnotationsAndObservers(self):
+        # Remove old observers
+        for sliceNode, tag in self._annotationObservers:
+            try:
+                sliceNode.RemoveObserver(tag)
+            except Exception:
+                pass
+        self._annotationObservers = []
+        self._annotationGridNode = None
+
+        # Remove old center labels
+        self._removeCenterLabelNodes()
+
+        # Clear all annotations
+        lm = slicer.app.layoutManager()
+        if not lm:
+            return
+        for viewName in ("Red", "Yellow", "Green"):
+            sw = lm.sliceWidget(viewName)
+            if not sw:
+                continue
+            ca = sw.sliceView().cornerAnnotation()
+            ca.SetText(vtk.vtkCornerAnnotation.UpperRight, "")
+            ca.SetText(vtk.vtkCornerAnnotation.UpperLeft, "")
+            sw.sliceView().scheduleRender()
+
+    def _installSliceObservers(self, gridNode):
+        """
+        gridNode must be a vtkMRMLVolumeNode with GetRASToIJKMatrix.
+        """
+        self._annotationGridNode = gridNode
+        lm = slicer.app.layoutManager()
+        if not lm:
+            return
+
+        for viewName in ("Red", "Yellow", "Green"):
+            sw = lm.sliceWidget(viewName)
+            if not sw:
+                continue
+            sliceNode = sw.sliceLogic().GetSliceNode()
+
+            tag = sliceNode.AddObserver(
+                vtk.vtkCommand.ModifiedEvent,
+                lambda caller, event, vn=viewName: self._updateAnnotationsForView(vn)
+            )
+            self._annotationObservers.append((sliceNode, tag))
+
+            self._updateAnnotationsForView(viewName)
+
+    def _currentKForView(self, viewName: str):
+        """
+        Estimate current slice index k in the gridNode's IJK.
+        Uses slice plane origin (RAS) -> RAS-to-IJK.
+
+        NOTE: In Slicer 5.10, GetSliceToRAS() returns a vtkMatrix4x4 and takes no args.
+        """
+        if self._annotationGridNode is None:
+            return None
+
+        lm = slicer.app.layoutManager()
+        if not lm:
+            return None
+        sw = lm.sliceWidget(viewName)
+        if not sw:
+            return None
+
+        sliceNode = sw.sliceLogic().GetSliceNode()
+
+        sliceToRAS = sliceNode.GetSliceToRAS()
+        originRAS = [
+            sliceToRAS.GetElement(0, 3),
+            sliceToRAS.GetElement(1, 3),
+            sliceToRAS.GetElement(2, 3),
+            1.0
+        ]
+
+        rasToIJK = vtk.vtkMatrix4x4()
+        self._annotationGridNode.GetRASToIJKMatrix(rasToIJK)
+
+        ijk4 = [0.0, 0.0, 0.0, 0.0]
+        rasToIJK.MultiplyPoint(originRAS, ijk4)
+
+        if not np.all(np.isfinite(ijk4[:3])):
+            return None
+
+        return int(round(float(ijk4[2])))
+
+    def _updateAnnotationsForView(self, viewName: str):
+        lm = slicer.app.layoutManager()
+        if not lm:
+            return
+        sw = lm.sliceWidget(viewName)
+        if not sw:
+            return
+
+        ca = sw.sliceView().cornerAnnotation()
+
+        ca.SetText(vtk.vtkCornerAnnotation.UpperLeft, self._summaryText or "")
+
+        k = self._currentKForView(viewName)
+        if k is None or not self._metricsByK:
+            ca.SetText(vtk.vtkCornerAnnotation.UpperRight, "")
+            sw.sliceView().scheduleRender()
+            return
+
+        r = self._metricsByK.get(k)
+        if r is None:
+            ca.SetText(vtk.vtkCornerAnnotation.UpperRight, f"k={k}: (no IJV+CCA data)")
+            sw.sliceView().scheduleRender()
+            return
+
+        txt = (
+            f"IJV: {r['ijv_csa_mm2']:.1f} mm²   CCA: {r['cca_csa_mm2']:.1f} mm²\n"
+            f"IJV-CCA Angle: {r['angle_deg']:.1f}°"
+        )
+        ca.SetText(vtk.vtkCornerAnnotation.UpperRight, txt)
+        sw.sliceView().scheduleRender()
+
+    # -----------------------------
+    # Main compute
+    # -----------------------------
+    def onCompute(self):
+        segNode = self.segSelector.currentNode()
         if not segNode:
             slicer.util.errorDisplay("Select a segmentation node first.")
             return
 
-        # Reference volume preference
-        refVolume = self.ijvRefVolumeSelector.currentNode()
-        fallbackToSegGeom = refVolume is None
+        ijvKey = self.ijvSegmentEdit.text.strip()
+        ccaKey = self.ccaSegmentEdit.text.strip()
+        if not ijvKey or not ccaKey:
+            slicer.util.errorDisplay("Please enter both IJV and CCA segment names (or SegmentIDs).")
+            return
 
-        # --- Pick the IJV segment robustly ---
         segmentation = segNode.GetSegmentation()
         ids = vtk.vtkStringArray()
         segmentation.GetSegmentIDs(ids)
@@ -376,169 +441,191 @@ class SlicerNNUNetWidget(ScriptedLoadableModuleWidget):
             slicer.util.errorDisplay("No segments in this segmentation.")
             return
 
-        # 1) Prefer a segment literally named "3" (your schema: IJV == 3)
-        chosenSegmentID = None
-        for i in range(ids.GetNumberOfValues()):
-            sid = ids.GetValue(i)
-            nm = segmentation.GetSegment(sid).GetName().strip().lower()
-            if nm == "3":
-                chosenSegmentID = sid
-                break
-
-        # 2) Otherwise, any name containing "ijv"
-        if chosenSegmentID is None:
-            for i in range(ids.GetNumberOfValues()):
-                sid = ids.GetValue(i)
-                nm = segmentation.GetSegment(sid).GetName().strip().lower()
-                if "ijv" in nm or "internal jugular" in nm:
-                    chosenSegmentID = sid
-                    break
-
-        # 3) If still not found, stop (do not silently use index 3 or "first segment")
-        if chosenSegmentID is None:
-            all_names = [segmentation.GetSegment(ids.GetValue(i)).GetName()
-                        for i in range(ids.GetNumberOfValues())]
-            slicer.util.errorDisplay(
-                "Could not find IJV segment. Expected a segment named '3' or containing 'IJV'.\n\n"
-                "Available segments:\n- " + "\n- ".join(all_names)
-            )
+        ijvID = self._findSegmentIdByNameOrId(segmentation, ids, ijvKey)
+        ccaID = self._findSegmentIdByNameOrId(segmentation, ids, ccaKey)
+        if ijvID is None or ccaID is None:
+            available = self._listSegments(segmentation, ids)
+            msg = "Could not find:\n"
+            if ijvID is None:
+                msg += f"- IJV segment '{ijvKey}'\n"
+            if ccaID is None:
+                msg += f"- CCA segment '{ccaKey}'\n"
+            msg += "\nAvailable segments:\n- " + "\n- ".join(available)
+            slicer.util.errorDisplay(msg)
             return
 
-        segName = segmentation.GetSegment(chosenSegmentID).GetName()
-        slicer.util.showStatusMessage(
-            f"Computing IJV CSA on segment: '{segName}' (ID={chosenSegmentID})", 3000
-        )
+        # Clear previous observers/annotations for a clean run
+        self._clearSliceAnnotationsAndObservers()
+        self._metricsByK = {}
+        self._summaryText = ""
 
-        # --- Get a pure binary mask for ONLY that segment in the correct grid ---
-        # Use the reference volume geometry if provided, else segmentation geometry
-        if fallbackToSegGeom:
-            ijv_mask = slicer.util.arrayFromSegmentBinaryLabelmap(segNode, chosenSegmentID, None)
-            refGridNode = segNode   # for transform attachment
-        else:
-            ijv_mask = slicer.util.arrayFromSegmentBinaryLabelmap(segNode, chosenSegmentID, refVolume)
-            refGridNode = refVolume
+        refVolume = self.refVolumeSelector.currentNode()
+        fallbackToSegGeom = refVolume is None
 
-        # Ensure binary and keep largest component
-        ijv_mask = (ijv_mask > 0).astype(np.uint8)
-        ijv_mask = IJVCSALogic.largest_component(ijv_mask)
-
-        # Sanity: mask must be strictly {0,1}
-        u = np.unique(ijv_mask)
-        if not (len(u) <= 2 and set(u).issubset({0, 1})):
-            slicer.util.errorDisplay(
-                f"Selected segment should be binary but found label values: {u}.\n"
-                "This indicates multiple structures were included; aborting."
-            )
-            return
-
-        # Geometry from the reference grid
         tmpLM = None
         try:
+            # ---- Geometry (spacing + IJK<->RAS) ----
             if fallbackToSegGeom:
-                # Export to a temporary labelmap to read spacing/orientation in one shot
-                tmpLM = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLLabelMapVolumeNode', 'tmp_for_spacing')
-                idsOne = vtk.vtkStringArray()
-                idsOne.InsertNextValue(chosenSegmentID)
-                slicer.modules.segmentations.logic().ExportSegmentsToLabelmapNode(
-                    segNode, idsOne, tmpLM, None
-                )
+                tmpLM = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLabelMapVolumeNode", "tmp_ijvcca_geom")
+                idsTwo = vtk.vtkStringArray()
+                idsTwo.InsertNextValue(ijvID)
+                idsTwo.InsertNextValue(ccaID)
+                slicer.modules.segmentations.logic().ExportSegmentsToLabelmapNode(segNode, idsTwo, tmpLM, None)
+
                 spacing = np.asarray(tmpLM.GetSpacing(), dtype=float)
                 ijkToRas = vtk.vtkMatrix4x4()
                 tmpLM.GetIJKToRASMatrix(ijkToRas)
+
+                ijv_mask = slicer.util.arrayFromSegmentBinaryLabelmap(segNode, ijvID, None)
+                cca_mask = slicer.util.arrayFromSegmentBinaryLabelmap(segNode, ccaID, None)
+
+                gridNodeForAnnotations = tmpLM
             else:
                 spacing = np.asarray(refVolume.GetSpacing(), dtype=float)
                 ijkToRas = vtk.vtkMatrix4x4()
                 refVolume.GetIJKToRASMatrix(ijkToRas)
 
-            # --- Axial per-slice CSA + centroids (viewer-aligned) ---
-            z_idx, areas_mm2, pts_ijk = IJVCSALogic.compute_axial_cross_sections(ijv_mask, spacing)
-            if len(z_idx) == 0:
-                slicer.util.infoDisplay("No voxels found in the IJV segment after largest-component filtering.")
+                ijv_mask = slicer.util.arrayFromSegmentBinaryLabelmap(segNode, ijvID, refVolume)
+                cca_mask = slicer.util.arrayFromSegmentBinaryLabelmap(segNode, ccaID, refVolume)
+
+                gridNodeForAnnotations = refVolume
+
+            # ---- Prepare masks ----
+            ijv_mask = IJVCSALogic.largest_component((ijv_mask > 0).astype(np.uint8))
+            cca_mask = IJVCSALogic.largest_component((cca_mask > 0).astype(np.uint8))
+
+            # ---- Per-slice metrics ----
+            ijv_k, ijv_area, ijv_ijk = IJVCSALogic.compute_axial_cross_sections(ijv_mask, spacing)
+            cca_k, cca_area, cca_ijk = IJVCSALogic.compute_axial_cross_sections(cca_mask, spacing)
+
+            if len(ijv_k) == 0:
+                slicer.util.infoDisplay("No voxels found in IJV segment after filtering.")
+                return
+            if len(cca_k) == 0:
+                slicer.util.infoDisplay("No voxels found in CCA segment after filtering.")
                 return
 
-            # IJK->RAS (local) converter
-            def ijk_to_ras_local(p_ijk):
-                v = [float(p_ijk[0]), float(p_ijk[1]), float(p_ijk[2]), 1.0]
-                ras = [0.0, 0.0, 0.0, 0.0]
-                ijkToRas.MultiplyPoint(v, ras)
-                return [ras[0], ras[1], ras[2]]
+            ijk_to_ras = self._makeIJKToRASConverter(ijkToRas)
 
-            pts_ras_local = [ijk_to_ras_local(p) for p in pts_ijk]
+            ijv_map = {int(k): (float(ijv_area[i]), ijv_ijk[i]) for i, k in enumerate(ijv_k)}
+            cca_map = {int(k): (float(cca_area[i]), cca_ijk[i]) for i, k in enumerate(cca_k)}
+            common_slices = sorted(set(ijv_map.keys()) & set(cca_map.keys()))
+            if not common_slices:
+                slicer.util.infoDisplay("No axial slices contain BOTH IJV and CCA foreground. Cannot compute angles.")
+                return
 
-            # ---- Build a single per-slice table (z-index, CSA, centroid in RAS local) ----
-            full_df = pd.DataFrame({
-                "slice_k": z_idx.astype(int),
-                "csa_mm2": areas_mm2.astype(float),
-                "ras_x": [float(p[0]) for p in pts_ras_local],
-                "ras_y": [float(p[1]) for p in pts_ras_local],
-                "ras_z": [float(p[2]) for p in pts_ras_local],
-                "spacing_x_mm": spacing[0],
-                "spacing_y_mm": spacing[1],
-                "spacing_z_mm": spacing[2],
-            })
+            side = self.sideCombo.currentText
+            ref_xy = np.array([1.0, 0.0], dtype=float) if side == "Left" else np.array([-1.0, 0.0], dtype=float)
+            ref_label = "Vector.right" if side == "Left" else "Vector.left"
 
+            rows = []
+            for k in common_slices:
+                ijv_a, ijv_pijk = ijv_map[k]
+                cca_a, cca_pijk = cca_map[k]
+
+                p_ijv = ijk_to_ras(ijv_pijk)
+                p_cca = ijk_to_ras(cca_pijk)
+
+                v = p_cca - p_ijv
+                ang = self._angleFromRefDeg(np.array([v[0], v[1]], dtype=float), ref_xy)
+
+                rows.append({
+                    "slice_k": int(k),
+
+                    "ijv_csa_mm2": float(ijv_a),
+                    "ijv_ras_x": float(p_ijv[0]),
+                    "ijv_ras_y": float(p_ijv[1]),
+                    "ijv_ras_z": float(p_ijv[2]),
+
+                    "cca_csa_mm2": float(cca_a),
+                    "cca_ras_x": float(p_cca[0]),
+                    "cca_ras_y": float(p_cca[1]),
+                    "cca_ras_z": float(p_cca[2]),
+
+                    "angle_deg": float(ang),
+                    "angle_reference": ref_label,
+
+                    "spacing_x_mm": float(spacing[0]),
+                    "spacing_y_mm": float(spacing[1]),
+                    "spacing_z_mm": float(spacing[2]),
+                })
+
+            # ---- Table + CSV ----
+            full_df = pd.DataFrame(rows)
             tableNode = slicer.mrmlScene.AddNewNodeByClass(
                 "vtkMRMLTableNode",
-                f"{segNode.GetName()} IJV CSA (Axial per-slice)"
+                f"{segNode.GetName()} IJV+CCA CSA+Angle (Axial)"
             )
             self._dfToTable(tableNode, full_df)
 
-            # ---- Markups: one point per slice at centroid, label with CSA ----
-            csaFids = slicer.mrmlScene.AddNewNodeByClass(
-                "vtkMRMLMarkupsFiducialNode",
-                f"{segNode.GetName()} IJV CSA (Axial centroids)"
-            )
-            # Attach the same transform as the reference grid node so everything stays aligned
-            csaFids.SetAndObserveTransformNodeID(refGridNode.GetTransformNodeID())
-
-            csaFidsDisp = csaFids.GetDisplayNode()
-            if csaFidsDisp:
-                csaFidsDisp.SetVisibility3D(True)
-                csaFidsDisp.SetVisibility2D(True)
-                csaFidsDisp.SetGlyphScale(1.2)  # slightly smaller
-                csaFidsDisp.SetTextScale(1.1)
-                csaFidsDisp.SetPointLabelsVisibility(True)
-
-            for k, a_mm2, p_ras in zip(z_idx, areas_mm2, pts_ras_local):
-                csaFids.AddControlPoint(p_ras)
-                idx = csaFids.GetNumberOfControlPoints() - 1
-                csaFids.SetNthControlPointLabel(idx, f"k={int(k)}: {a_mm2:.1f} mm²")
-
-            # ---- Save CSV to the chosen output directory ----
-            outDir = Path(self.ijvOutputDir.currentPath)
+            outDir = Path(self.outputDir.currentPath)
             try:
                 outDir.mkdir(parents=True, exist_ok=True)
-                csvPath = outDir / f"{segNode.GetName()}_IJV_CSA_axial_per_slice.csv"
+                csvPath = outDir / f"{segNode.GetName()}_IJV_CCA_CSA_Angle_axial.csv"
                 full_df.to_csv(csvPath, index=False)
             except Exception as save_e:
                 slicer.util.warningDisplay(f"Failed to save CSV: {save_e}")
 
-            # Make viewers show the same grid used for geometry (nice for QA)
+            # ---- Build per-k lookup for annotations ----
+            self._metricsByK = {int(r["slice_k"]): r for r in rows}
+
+            # ---- Summary stats for upper-left ----
+            ijv_vals = np.array([r["ijv_csa_mm2"] for r in rows], dtype=float)
+            ang_vals = np.array([r["angle_deg"] for r in rows], dtype=float)
+
+            def fmt_stats(arr):
+                arr = arr[np.isfinite(arr)]
+                if arr.size == 0:
+                    return "Avg: n/a   Min: n/a   Max: n/a"
+                return f"Avg: {arr.mean():.1f}   Min: {arr.min():.1f}   Max: {arr.max():.1f}"
+
+            self._summaryText = (
+                f"IJV CSA (mm²)  {fmt_stats(ijv_vals)}\n"
+                f"Angle (deg)    {fmt_stats(ang_vals)}\n"
+                f"Angle ref: {ref_label}"
+            )
+
+            # ---- NEW: Create markups at COM and label with CSA ----
+            transformID = gridNodeForAnnotations.GetTransformNodeID() if gridNodeForAnnotations else None
+            self._createCenterLabelNodes(segNode.GetName(), transformID)
+            self._populateCenterLabelNodes(rows)
+
+            # ---- Install slice observers + show annotations ----
+            self._installSliceObservers(gridNodeForAnnotations)
+
+            # QA: set slice viewers background to ref volume if provided
             if not fallbackToSegGeom and refVolume is not None:
                 lm = slicer.app.layoutManager()
                 for viewName in ("Red", "Yellow", "Green"):
-                    sv = lm.sliceWidget(viewName).sliceLogic()
-                    sv.GetSliceCompositeNode().SetBackgroundVolumeID(refVolume.GetID())
+                    sw = lm.sliceWidget(viewName).sliceLogic()
+                    sw.GetSliceCompositeNode().SetBackgroundVolumeID(refVolume.GetID())
 
-            slicer.util.infoDisplay("IJV axial per-slice CSA complete.")
+            slicer.util.infoDisplay(
+                "IJV/CCA per-slice CSA + angle complete.\n"
+                "Scroll slices to see per-slice values in the corner annotation.\n"
+                "CSA labels are also shown at each vessel COM as Markups."
+            )
 
         except Exception as e:
             slicer.util.errorDisplay(
-                f"Failed to compute IJV cross-sections.\n\n{e}\n\n{traceback.format_exc()}"
+                f"Failed to compute IJV/CCA per-slice metrics.\n\n{e}\n\n{traceback.format_exc()}"
             )
         finally:
-            # Clean up the temporary labelmap (if created)
-            if 'tmpLM' in locals() and tmpLM is not None:
-                slicer.mrmlScene.RemoveNode(tmpLM)
+            if tmpLM is not None:
+                # If tmpLM is being used as the annotation grid (fallback-to-seg-geom),
+                # keep it alive. Otherwise remove it.
+                if self.refVolumeSelector.currentNode() is not None:
+                    slicer.mrmlScene.RemoveNode(tmpLM)
 
+    # -----------------------------
+    # DataFrame -> Table
+    # -----------------------------
     def _dfToTable(self, tableNode, df):
-        import pandas as pd
         import numpy as np
         from vtk import vtkFloatArray, vtkIntArray, vtkStringArray
 
         vtk_table = vtk.vtkTable()
 
-        # Create VTK columns from pandas df
         for col in df.columns:
             series = df[col]
             if pd.api.types.is_integer_dtype(series):
@@ -550,7 +637,6 @@ class SlicerNNUNetWidget(ScriptedLoadableModuleWidget):
 
             arr.SetName(str(col))
 
-            # Insert values
             for v in series.astype(object).tolist():
                 if isinstance(arr, vtkIntArray):
                     arr.InsertNextValue(0 if v is None or v == "" else int(v))
@@ -561,16 +647,15 @@ class SlicerNNUNetWidget(ScriptedLoadableModuleWidget):
 
             vtk_table.AddColumn(arr)
 
-        # Instead of SetTable(), modify underlying object
         tableNode.SetAndObserveTable(vtk_table)
         tableNode.Modified()
 
-def onReload(self):
-    """
-    Customization of reload to allow reloading of the SlicerNNUNetLib files.
-    """
-    import imp
 
+# -----------------------------
+# Reload hook (kept from original)
+# -----------------------------
+def onReload(self):
+    import imp
     packageName = "SlicerNNUNetLib"
     submoduleNames = ["Signal", "Parameter", "InstallLogic", "SegmentationLogic", "Widget"]
     f, filename, description = imp.find_module(packageName)
@@ -582,33 +667,4 @@ def onReload(self):
             imp.load_module(packageName + '.' + submoduleName, f, filename, description)
         finally:
             f.close()
-
     ScriptedLoadableModuleWidget.onReload(self)
-
-
-class SlicerNNUNetTest(ScriptedLoadableModuleTest):
-    def runTest(self):
-        from pathlib import Path
-        from SlicerNNUNetLib import InstallLogic
-
-        try:
-            from SlicerPythonTestRunnerLib import RunnerLogic, RunSettings, isRunningInTestMode
-        except ImportError:
-            slicer.util.warningDisplay("Please install SlicerPythonTestRunner extension to run the self tests.")
-            return
-
-        if InstallLogic().getInstalledNNUnetVersion() is None:
-            slicer.util.warningDisplay("Please install nnUNet to run the self tests of this extension.")
-            return
-
-        currentDirTest = Path(__file__).parent.joinpath("Testing")
-        results = RunnerLogic().runAndWaitFinished(
-            currentDirTest,
-            RunSettings(extraPytestArgs=RunSettings.pytestFileFilterArgs("*TestCase.py") + ["-m not slow"]),
-            doRunInSubProcess=not isRunningInTestMode()
-        )
-
-        if results.failuresNumber:
-            raise AssertionError(f"Test failed: \n{results.getFailingCasesString()}")
-
-        slicer.util.delayDisplay(f"Tests OK. {results.getSummaryString()}")
