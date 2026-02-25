@@ -1,5 +1,5 @@
-
 #!/usr/bin/env python3
+
 """
 Volumetrics + CSA for SegThy labels (thyroid, CCA, IJV) from .nii/.nii.gz.
 - Thyroid (label=1): volume only (CSA not computed by default).
