@@ -1,3 +1,12 @@
+"""
+Creates a 3D volume from a series of slices output from the ultrasound simulator
+To use:
+- Ensure input folder contains separate folders for each model variant, named "IJV_FBX_Variant_XX"
+- Each variant folder should have two child folders named "Scans" and "Segments"
+- Open a single "Segment" PNG in slicer and use the data probe to determine "color_to_label" mapping (RGB)
+- Ensure output spacing matches desired values
+
+"""
 
 import os
 import re
@@ -16,15 +25,17 @@ color_to_label = {
 }
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
 def natural_sort_key(s):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
 
+
 def match_color_with_tolerance(rgba_array, target_color, tolerance=0):
     diff = np.abs(rgba_array.astype(np.int16) - np.array(target_color, dtype=np.int16))
     return np.all(diff <= tolerance, axis=-1)
+
 
 # ----------------------------------------------------------------------------- 
 # Process one variant folder
@@ -32,18 +43,18 @@ def match_color_with_tolerance(rgba_array, target_color, tolerance=0):
 def process_variant(variant_dir, output_root, spacing, origin, tolerance=0):
 
     scans_dir = os.path.join(variant_dir, "Scans")
-    seg_dir    = os.path.join(variant_dir, "Segments")
+    seg_dir = os.path.join(variant_dir, "Segments")
 
     variant_name = os.path.basename(variant_dir)
     match = re.search(r"(\d+)", variant_name)
     variant_num = match.group(1).zfill(2) if match else "XX"
 
-    output_scan  = os.path.join(output_root, f"scan_{variant_num}.nii.gz")
-    output_seg   = os.path.join(output_root, f"seg_{variant_num}.nii.gz")
+    output_scan = os.path.join(output_root, f"scan_{variant_num}.nii.gz")
+    output_seg = os.path.join(output_root, f"seg_{variant_num}.nii.gz")
 
-    print(f"\n==============================")
+    print("\n==============================")
     print(f" Processing Variant {variant_num}")
-    print(f"==============================")
+    print("==============================")
 
     # ---------------- segmentation ----------------
     png_files = sorted([f for f in os.listdir(seg_dir) if f.lower().endswith(".png")],
@@ -109,7 +120,7 @@ def run_batch(top_folder, output_folder, spacing=(0.12, 0.12, 1.0), origin=(0,0,
     for vf in variant_folders:
         process_variant(vf, output_folder, spacing, origin, tolerance)
 
-    print("\n All variants processed successfully!")
+    print("\n All variants processed successfully.")
 
 
 # ----------------------------------------------------------------------------- 
@@ -118,7 +129,7 @@ def run_batch(top_folder, output_folder, spacing=(0.12, 0.12, 1.0), origin=(0,0,
 if __name__ == "__main__":
 
     TOP_VARIANTS_FOLDER = r"C:\Python\catalyst-tools\synthetic_data\Synthetic"   # contains IJV_FBX_Variant_01 .. _16
-    OUTPUT_FOLDER       = r"C:\Python\catalyst-tools\synthetic_data\Synthetic\output_volumes"        # where scan_XX and seg_XX will be saved
+    OUTPUT_FOLDER = r"C:\Python\catalyst-tools\synthetic_data\Synthetic\output_volumes"        # where scan_XX and seg_XX will be saved
 
     run_batch(
         top_folder=TOP_VARIANTS_FOLDER,
