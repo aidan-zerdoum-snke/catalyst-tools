@@ -1,0 +1,13 @@
+{
+    "labels": {
+        "background": 0,
+        "thyroid": 1,
+        "CCA": 2,
+        "IJV": 3
+    },
+    "channel_names": {
+      "0": "US"
+    },
+    "numTraining": 30,
+    "file_ending": ".nii.gz"
+  }
