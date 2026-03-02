@@ -1,0 +1,226 @@
+{
+    "foreground_mean": {
+        "Dice": 0.8380135478606411,
+        "FN": 249366.13333333333,
+        "FP": 230824.86666666667,
+        "IoU": 0.7332976862553194,
+        "TN": 114955917.46666665,
+        "TP": 1313579.3333333333,
+        "n_pred": 1544404.2,
+        "n_ref": 1562945.4666666668
+    },
+    "mean": {
+        "1": {
+            "Dice": 0.8227257475009313,
+            "FN": 575852.8,
+            "FP": 474647.0,
+            "IoU": 0.708470269495883,
+            "TN": 113123837.6,
+            "TP": 2575350.4,
+            "n_pred": 3049997.4,
+            "n_ref": 3151203.2
+        },
+        "2": {
+            "Dice": 0.9131708904982142,
+            "FN": 66112.4,
+            "FP": 103601.6,
+            "IoU": 0.8423085051785053,
+            "TN": 115591453.0,
+            "TP": 988520.8,
+            "n_pred": 1092122.4,
+            "n_ref": 1054633.2
+        },
+        "3": {
+            "Dice": 0.7781440055827779,
+            "FN": 106133.2,
+            "FP": 114226.0,
+            "IoU": 0.6491142840915697,
+            "TN": 116152461.8,
+            "TP": 376866.8,
+            "n_pred": 491092.8,
+            "n_ref": 483000.0
+        }
+    },
+    "metric_per_case": [
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.6562185487970823,
+                    "FN": 152680,
+                    "FP": 1545325,
+                    "IoU": 0.4883372576765759,
+                    "TN": 99667288,
+                    "TP": 1620597,
+                    "n_pred": 3165922,
+                    "n_ref": 1773277
+                },
+                "2": {
+                    "Dice": 0.9162878621449749,
+                    "FN": 45049,
+                    "FP": 113088,
+                    "IoU": 0.8455085350973088,
+                    "TN": 101962293,
+                    "TP": 865460,
+                    "n_pred": 978548,
+                    "n_ref": 910509
+                },
+                "3": {
+                    "Dice": 0.8493853488174435,
+                    "FN": 127645,
+                    "FP": 47792,
+                    "IoU": 0.738201402132746,
+                    "TN": 102315768,
+                    "TP": 494685,
+                    "n_pred": 542477,
+                    "n_ref": 622330
+                }
+            },
+            "prediction_file": "C:\\git\\catalyst-tools\\catalyst_results\\Dataset312_ModelA\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_0\\validation\\CASE-011-P2-3-LEFT.nii.gz",
+            "reference_file": "C:\\git\\catalyst-tools\\catalyst_preprocessed\\Dataset312_ModelA\\gt_segmentations\\CASE-011-P2-3-LEFT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.8417054764557741,
+                    "FN": 1022850,
+                    "FP": 367384,
+                    "IoU": 0.7266765570817587,
+                    "TN": 82950469,
+                    "TP": 3696172,
+                    "n_pred": 4063556,
+                    "n_ref": 4719022
+                },
+                "2": {
+                    "Dice": 0.8419115015442435,
+                    "FN": 50771,
+                    "FP": 159042,
+                    "IoU": 0.7269837345478204,
+                    "TN": 87268375,
+                    "TP": 558687,
+                    "n_pred": 717729,
+                    "n_ref": 609458
+                },
+                "3": {
+                    "Dice": 0.574277265821347,
+                    "FN": 145573,
+                    "FP": 334145,
+                    "IoU": 0.402797298559024,
+                    "TN": 87233600,
+                    "TP": 323557,
+                    "n_pred": 657702,
+                    "n_ref": 469130
+                }
+            },
+            "prediction_file": "C:\\git\\catalyst-tools\\catalyst_results\\Dataset312_ModelA\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_0\\validation\\CASE-014-P3-1-RIGHT.nii.gz",
+            "reference_file": "C:\\git\\catalyst-tools\\catalyst_preprocessed\\Dataset312_ModelA\\gt_segmentations\\CASE-014-P3-1-RIGHT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.9237615300253831,
+                    "FN": 230226,
+                    "FP": 232196,
+                    "IoU": 0.8583242058306743,
+                    "TN": 96973425,
+                    "TP": 2801523,
+                    "n_pred": 3033719,
+                    "n_ref": 3031749
+                },
+                "2": {
+                    "Dice": 0.9506321148675705,
+                    "FN": 92589,
+                    "FP": 31683,
+                    "IoU": 0.9059092891408635,
+                    "TN": 98916602,
+                    "TP": 1196496,
+                    "n_pred": 1228179,
+                    "n_ref": 1289085
+                },
+                "3": {
+                    "Dice": 0.7648468388713416,
+                    "FN": 21327,
+                    "FP": 135392,
+                    "IoU": 0.6192323858625273,
+                    "TN": 99825783,
+                    "TP": 254868,
+                    "n_pred": 390260,
+                    "n_ref": 276195
+                }
+            },
+            "prediction_file": "C:\\git\\catalyst-tools\\catalyst_results\\Dataset312_ModelA\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_0\\validation\\CASE-015-P1-1-RIGHT.nii.gz",
+            "reference_file": "C:\\git\\catalyst-tools\\catalyst_preprocessed\\Dataset312_ModelA\\gt_segmentations\\CASE-015-P1-1-RIGHT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.8126386257716128,
+                    "FN": 913479,
+                    "FP": 63954,
+                    "IoU": 0.6844071597829348,
+                    "TN": 130435283,
+                    "TP": 2119700,
+                    "n_pred": 2183654,
+                    "n_ref": 3033179
+                },
+                "2": {
+                    "Dice": 0.930763124476566,
+                    "FN": 95145,
+                    "FP": 95082,
+                    "IoU": 0.8704929148846652,
+                    "TN": 132063562,
+                    "TP": 1278627,
+                    "n_pred": 1373709,
+                    "n_ref": 1373772
+                },
+                "3": {
+                    "Dice": 0.8887063127394199,
+                    "FN": 69290,
+                    "FP": 29461,
+                    "IoU": 0.7997042752309209,
+                    "TN": 133039390,
+                    "TP": 394275,
+                    "n_pred": 423736,
+                    "n_ref": 463565
+                }
+            },
+            "prediction_file": "C:\\git\\catalyst-tools\\catalyst_results\\Dataset312_ModelA\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_0\\validation\\CASE-024-P3-1-RIGHT.nii.gz",
+            "reference_file": "C:\\git\\catalyst-tools\\catalyst_preprocessed\\Dataset312_ModelA\\gt_segmentations\\CASE-024-P3-1-RIGHT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.8793045564548041,
+                    "FN": 560029,
+                    "FP": 164376,
+                    "IoU": 0.7846061671074717,
+                    "TN": 155592723,
+                    "TP": 2638760,
+                    "n_pred": 2803136,
+                    "n_ref": 3198789
+                },
+                "2": {
+                    "Dice": 0.9262598494577167,
+                    "FN": 47008,
+                    "FP": 119113,
+                    "IoU": 0.8626480522218686,
+                    "TN": 157746433,
+                    "TP": 1043334,
+                    "n_pred": 1162447,
+                    "n_ref": 1090342
+                },
+                "3": {
+                    "Dice": 0.8135042616643368,
+                    "FN": 166831,
+                    "FP": 24340,
+                    "IoU": 0.6856360586726304,
+                    "TN": 158347768,
+                    "TP": 416949,
+                    "n_pred": 441289,
+                    "n_ref": 583780
+                }
+            },
+            "prediction_file": "C:\\git\\catalyst-tools\\catalyst_results\\Dataset312_ModelA\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_0\\validation\\CASE-026-P2-2-RIGHT.nii.gz",
+            "reference_file": "C:\\git\\catalyst-tools\\catalyst_preprocessed\\Dataset312_ModelA\\gt_segmentations\\CASE-026-P2-2-RIGHT.nii.gz"
+        }
+    ]
+}
