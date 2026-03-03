@@ -8,9 +8,9 @@ Outputs:
 
 Usage (PowerShell):
   python evaluate_medpy.py `
-    --gt   "C:\...\testing\labels" `
-    --pred "C:\...\testing\predictions" `
-    --out  "C:\...\testing\validation_output" `
+    --gt   "GROUND TRUTH LABELS" `
+    --pred "MODEL TO EVALUATE's PREDICTIONS" `
+    --out  "OUTPUT DIRECTORY" `
     --labels 1 2 3 `
     --keep-largest-cc
 """
