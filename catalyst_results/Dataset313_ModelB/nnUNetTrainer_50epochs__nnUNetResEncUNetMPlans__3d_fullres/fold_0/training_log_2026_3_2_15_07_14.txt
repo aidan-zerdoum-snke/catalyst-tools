@@ -1,0 +1,31 @@
+
+#######################################################################
+Please cite the following paper when using nnU-Net:
+Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature methods, 18(2), 203-211.
+#######################################################################
+ 
+2026-03-02 15:07:17.060567: do_dummy_2d_data_aug: False 
+2026-03-02 15:07:17.072082: Creating new 5-fold cross-validation split... 
+2026-03-02 15:07:17.085419: Desired fold for training: 0 
+2026-03-02 15:07:17.097419: This split has 20 training and 6 validation cases. 
+
+This is the configuration used by this training:
+Configuration name: 3d_fullres
+ {'data_identifier': 'nnUNetPlans_3d_fullres', 'preprocessor_name': 'DefaultPreprocessor', 'batch_size': 2, 'patch_size': [128, 128, 128], 'median_image_size_in_voxels': [474.5, 442.5, 506.5], 'spacing': [0.11999999731779099, 0.11999999731779099, 0.11999999731779099], 'normalization_schemes': ['ZScoreNormalization'], 'use_mask_for_norm': [False], 'resampling_fn_data': 'resample_data_or_seg_to_shape', 'resampling_fn_seg': 'resample_data_or_seg_to_shape', 'resampling_fn_data_kwargs': {'is_seg': False, 'order': 3, 'order_z': 0, 'force_separate_z': None}, 'resampling_fn_seg_kwargs': {'is_seg': True, 'order': 1, 'order_z': 0, 'force_separate_z': None}, 'resampling_fn_probabilities': 'resample_data_or_seg_to_shape', 'resampling_fn_probabilities_kwargs': {'is_seg': False, 'order': 1, 'order_z': 0, 'force_separate_z': None}, 'architecture': {'network_class_name': 'dynamic_network_architectures.architectures.unet.ResidualEncoderUNet', 'arch_kwargs': {'n_stages': 6, 'features_per_stage': [32, 64, 128, 256, 320, 320], 'conv_op': 'torch.nn.modules.conv.Conv3d', 'kernel_sizes': [[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]], 'strides': [[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]], 'n_blocks_per_stage': [1, 3, 4, 6, 6, 6], 'n_conv_per_stage_decoder': [1, 1, 1, 1, 1], 'conv_bias': True, 'norm_op': 'torch.nn.modules.instancenorm.InstanceNorm3d', 'norm_op_kwargs': {'eps': 1e-05, 'affine': True}, 'dropout_op': None, 'dropout_op_kwargs': None, 'nonlin': 'torch.nn.LeakyReLU', 'nonlin_kwargs': {'inplace': True}}, '_kw_requires_import': ['conv_op', 'norm_op', 'dropout_op', 'nonlin']}, 'batch_dice': True} 
+ 
+These are the global plan.json settings:
+ {'dataset_name': 'Dataset313_ModelB', 'plans_name': 'nnUNetResEncUNetMPlans', 'original_median_spacing_after_transp': [0.11999999731779099, 0.11999999731779099, 0.11999999731779099], 'original_median_shape_after_transp': [474, 470, 526], 'image_reader_writer': 'SimpleITKIO', 'transpose_forward': [0, 1, 2], 'transpose_backward': [0, 1, 2], 'experiment_planner_used': 'nnUNetPlannerResEncM', 'label_manager': 'LabelManager', 'foreground_intensity_properties_per_channel': {'0': {'max': 255.0, 'mean': 47.515995025634766, 'median': 49.0, 'min': 0.0, 'percentile_00_5': 0.0, 'percentile_99_5': 162.0, 'std': 33.72027587890625}}} 
+ 
+2026-03-02 15:07:46.875046: Unable to plot network architecture: 
+2026-03-02 15:07:46.888166: module 'torch.onnx' has no attribute '_optimize_graph' 
+2026-03-02 15:07:46.975862:  
+2026-03-02 15:07:46.985864: Epoch 0 
+2026-03-02 15:07:46.996202: Current learning rate: 0.01 
+2026-03-02 15:19:03.010977: train_loss 0.5255 
+2026-03-02 15:19:03.022973: val_loss 0.3349 
+2026-03-02 15:19:03.033907: Pseudo dice [np.float32(0.518), np.float32(0.0), np.float32(0.0)] 
+2026-03-02 15:19:03.043956: Epoch time: 676.04 s 
+2026-03-02 15:19:03.055035: Yayy! New best EMA pseudo Dice: 0.17270000278949738 
+2026-03-02 15:19:04.693312:  
+2026-03-02 15:19:04.706285: Epoch 1 
+2026-03-02 15:19:04.719207: Current learning rate: 0.00982 

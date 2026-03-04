@@ -7,10 +7,10 @@ Outputs:
   - JSON: per-label means (Dice, IoU, HD95, ASSD)
 
 Usage (PowerShell):
-  python evaluate_all_medpy.py `
-    --gt   "C:\...\labelsTs" `
-    --pred "C:\...\predictionsTs" `
-    --out  "C:\...\predictionsTs" `
+  python evaluate_medpy.py `
+    --gt   "GROUND TRUTH LABELS" `
+    --pred "MODEL TO EVALUATE's PREDICTIONS" `
+    --out  "OUTPUT DIRECTORY" `
     --labels 1 2 3 `
     --keep-largest-cc
 """
