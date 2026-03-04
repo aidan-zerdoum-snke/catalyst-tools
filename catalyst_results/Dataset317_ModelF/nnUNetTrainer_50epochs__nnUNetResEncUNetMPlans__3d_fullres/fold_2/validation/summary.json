@@ -1,0 +1,298 @@
+{
+    "foreground_mean": {
+        "Dice": 0.8859751236351379,
+        "FN": 183947.2857142857,
+        "FP": 139975.80952380953,
+        "IoU": 0.8070377362263234,
+        "TN": 119624587.61904763,
+        "TP": 1423330.2857142857,
+        "n_pred": 1563306.0952380954,
+        "n_ref": 1607277.5714285716
+    },
+    "mean": {
+        "1": {
+            "Dice": 0.8998671291327855,
+            "FN": 364442.4285714286,
+            "FP": 223564.0,
+            "IoU": 0.8224340983030142,
+            "TN": 118621280.14285715,
+            "TP": 2162554.4285714286,
+            "n_pred": 2386118.4285714286,
+            "n_ref": 2526996.8571428573
+        },
+        "2": {
+            "Dice": 0.9043262392927246,
+            "FN": 80094.85714285714,
+            "FP": 117239.42857142857,
+            "IoU": 0.8292997961050668,
+            "TN": 120103961.0,
+            "TP": 1070545.7142857143,
+            "n_pred": 1187785.142857143,
+            "n_ref": 1150640.5714285714
+        },
+        "3": {
+            "Dice": 0.8537320024799033,
+            "FN": 107304.57142857143,
+            "FP": 79124.0,
+            "IoU": 0.769379314270889,
+            "TN": 120148521.71428572,
+            "TP": 1036890.7142857143,
+            "n_pred": 1116014.7142857143,
+            "n_ref": 1144195.2857142857
+        }
+    },
+    "metric_per_case": [
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.81392379121349,
+                    "FN": 1202262,
+                    "FP": 405715,
+                    "IoU": 0.6862322886032981,
+                    "TN": 82912138,
+                    "TP": 3516760,
+                    "n_pred": 3922475,
+                    "n_ref": 4719022
+                },
+                "2": {
+                    "Dice": 0.8121109183206913,
+                    "FN": 55293,
+                    "FP": 201129,
+                    "IoU": 0.6836588793059845,
+                    "TN": 87226288,
+                    "TP": 554165,
+                    "n_pred": 755294,
+                    "n_ref": 609458
+                },
+                "3": {
+                    "Dice": 0.5011481989712417,
+                    "FN": 254935,
+                    "FP": 171492,
+                    "IoU": 0.3343547364904733,
+                    "TN": 87396253,
+                    "TP": 214195,
+                    "n_pred": 385687,
+                    "n_ref": 469130
+                }
+            },
+            "prediction_file": "C:\\Python\\catalyst-tools\\catalyst_results\\Dataset317_ModelF\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_2\\validation\\CASE-014-P3-1-RIGHT.nii.gz",
+            "reference_file": "C:\\Python\\catalyst-tools\\catalyst_preprocessed\\Dataset317_ModelF\\gt_segmentations\\CASE-014-P3-1-RIGHT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.9127923585313112,
+                    "FN": 188738,
+                    "FP": 234681,
+                    "IoU": 0.8395750027089921,
+                    "TN": 111361962,
+                    "TP": 2215939,
+                    "n_pred": 2450620,
+                    "n_ref": 2404677
+                },
+                "2": {
+                    "Dice": 0.9461759511994717,
+                    "FN": 59867,
+                    "FP": 40227,
+                    "IoU": 0.8978500275035642,
+                    "TN": 113021447,
+                    "TP": 879779,
+                    "n_pred": 920006,
+                    "n_ref": 939646
+                },
+                "3": {
+                    "Dice": 0.8678323377165389,
+                    "FN": 32485,
+                    "FP": 73604,
+                    "IoU": 0.7665228098515142,
+                    "TN": 113546933,
+                    "TP": 348298,
+                    "n_pred": 421902,
+                    "n_ref": 380783
+                }
+            },
+            "prediction_file": "C:\\Python\\catalyst-tools\\catalyst_results\\Dataset317_ModelF\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_2\\validation\\CASE-015-P1-1-LEFT.nii.gz",
+            "reference_file": "C:\\Python\\catalyst-tools\\catalyst_preprocessed\\Dataset317_ModelF\\gt_segmentations\\CASE-015-P1-1-LEFT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.9180355270469013,
+                    "FN": 115241,
+                    "FP": 172113,
+                    "IoU": 0.8484895299207263,
+                    "TN": 158209345,
+                    "TP": 1609241,
+                    "n_pred": 1781354,
+                    "n_ref": 1724482
+                },
+                "2": {
+                    "Dice": 0.9203375577401398,
+                    "FN": 56766,
+                    "FP": 77752,
+                    "IoU": 0.8524308355246342,
+                    "TN": 159194381,
+                    "TP": 777041,
+                    "n_pred": 854793,
+                    "n_ref": 833807
+                },
+                "3": {
+                    "Dice": 0.9162875819282753,
+                    "FN": 18867,
+                    "FP": 19373,
+                    "IoU": 0.8455080579021578,
+                    "TN": 159858419,
+                    "TP": 209281,
+                    "n_pred": 228654,
+                    "n_ref": 228148
+                }
+            },
+            "prediction_file": "C:\\Python\\catalyst-tools\\catalyst_results\\Dataset317_ModelF\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_2\\validation\\CASE-020-P2-1-LEFT.nii.gz",
+            "reference_file": "C:\\Python\\catalyst-tools\\catalyst_preprocessed\\Dataset317_ModelF\\gt_segmentations\\CASE-020-P2-1-LEFT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.8244542541650545,
+                    "FN": 839521,
+                    "FP": 94642,
+                    "IoU": 0.7013374486583471,
+                    "TN": 130404595,
+                    "TP": 2193658,
+                    "n_pred": 2288300,
+                    "n_ref": 3033179
+                },
+                "2": {
+                    "Dice": 0.9277935223267176,
+                    "FN": 111405,
+                    "FP": 85085,
+                    "IoU": 0.8653123644058328,
+                    "TN": 132073559,
+                    "TP": 1262367,
+                    "n_pred": 1347452,
+                    "n_ref": 1373772
+                },
+                "3": {
+                    "Dice": 0.8819090960805507,
+                    "FN": 75988,
+                    "FP": 27808,
+                    "IoU": 0.7887633223640697,
+                    "TN": 133041043,
+                    "TP": 387577,
+                    "n_pred": 415385,
+                    "n_ref": 463565
+                }
+            },
+            "prediction_file": "C:\\Python\\catalyst-tools\\catalyst_results\\Dataset317_ModelF\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_2\\validation\\CASE-024-P3-1-RIGHT.nii.gz",
+            "reference_file": "C:\\Python\\catalyst-tools\\catalyst_preprocessed\\Dataset317_ModelF\\gt_segmentations\\CASE-024-P3-1-RIGHT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.9063362071285004,
+                    "FN": 155372,
+                    "FP": 523451,
+                    "IoU": 0.8287155641761202,
+                    "TN": 159122371,
+                    "TP": 3284310,
+                    "n_pred": 3807761,
+                    "n_ref": 3439682
+                },
+                "2": {
+                    "Dice": 0.8360289736617974,
+                    "FN": 62299,
+                    "FP": 247854,
+                    "IoU": 0.7182558283189442,
+                    "TN": 161984672,
+                    "TP": 790679,
+                    "n_pred": 1038533,
+                    "n_ref": 852978
+                },
+                "3": {
+                    "Dice": 0.8732187587817223,
+                    "FN": 220444,
+                    "FP": 83183,
+                    "IoU": 0.7749674265411063,
+                    "TN": 161736246,
+                    "TP": 1045631,
+                    "n_pred": 1128814,
+                    "n_ref": 1266075
+                }
+            },
+            "prediction_file": "C:\\Python\\catalyst-tools\\catalyst_results\\Dataset317_ModelF\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_2\\validation\\CASE-029-P2-1-LEFT.nii.gz",
+            "reference_file": "C:\\Python\\catalyst-tools\\catalyst_preprocessed\\Dataset317_ModelF\\gt_segmentations\\CASE-029-P2-1-LEFT.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.9613245784493505,
+                    "FN": 24873,
+                    "FP": 68391,
+                    "IoU": 0.9255293410276126,
+                    "TN": 94168057,
+                    "TP": 1159095,
+                    "n_pred": 1227486,
+                    "n_ref": 1183968
+                },
+                "2": {
+                    "Dice": 0.9450839064680939,
+                    "FN": 104086,
+                    "FP": 86574,
+                    "IoU": 0.8958853810864813,
+                    "TN": 93589165,
+                    "TP": 1640591,
+                    "n_pred": 1727165,
+                    "n_ref": 1744677
+                },
+                "3": {
+                    "Dice": 0.9725677875791358,
+                    "FN": 75149,
+                    "FP": 92637,
+                    "IoU": 0.9466004431450953,
+                    "TN": 92278330,
+                    "TP": 2974300,
+                    "n_pred": 3066937,
+                    "n_ref": 3049449
+                }
+            },
+            "prediction_file": "C:\\Python\\catalyst-tools\\catalyst_results\\Dataset317_ModelF\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_2\\validation\\m_lateral_right.nii.gz",
+            "reference_file": "C:\\Python\\catalyst-tools\\catalyst_preprocessed\\Dataset317_ModelF\\gt_segmentations\\m_lateral_right.nii.gz"
+        },
+        {
+            "metrics": {
+                "1": {
+                    "Dice": 0.9622031873948906,
+                    "FN": 25090,
+                    "FP": 65955,
+                    "IoU": 0.9271595130260024,
+                    "TN": 94170493,
+                    "TP": 1158878,
+                    "n_pred": 1224833,
+                    "n_ref": 1183968
+                },
+                "2": {
+                    "Dice": 0.9427528453321603,
+                    "FN": 110948,
+                    "FP": 82055,
+                    "IoU": 0.8917052565900255,
+                    "TN": 93638215,
+                    "TP": 1589198,
+                    "n_pred": 1671253,
+                    "n_ref": 1700146
+                },
+                "3": {
+                    "Dice": 0.9631602563018582,
+                    "FN": 73264,
+                    "FP": 85771,
+                    "IoU": 0.9289384036018066,
+                    "TN": 93182428,
+                    "TP": 2078953,
+                    "n_pred": 2164724,
+                    "n_ref": 2152217
+                }
+            },
+            "prediction_file": "C:\\Python\\catalyst-tools\\catalyst_results\\Dataset317_ModelF\\nnUNetTrainer_50epochs__nnUNetResEncUNetMPlans__3d_fullres\\fold_2\\validation\\s_anterolateral_right.nii.gz",
+            "reference_file": "C:\\Python\\catalyst-tools\\catalyst_preprocessed\\Dataset317_ModelF\\gt_segmentations\\s_anterolateral_right.nii.gz"
+        }
+    ]
+}
