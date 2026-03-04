@@ -1,0 +1,437 @@
+
+#######################################################################
+Please cite the following paper when using nnU-Net:
+Isensee, F., Jaeger, P. F., Kohl, S. A., Petersen, J., & Maier-Hein, K. H. (2021). nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. Nature methods, 18(2), 203-211.
+#######################################################################
+ 
+2026-03-03 08:59:50.941210: do_dummy_2d_data_aug: False 
+2026-03-03 08:59:50.953728: Using splits from existing split file: C:\git\catalyst-tools\catalyst_preprocessed\Dataset312_ModelA\splits_final.json 
+2026-03-03 08:59:50.974751: The split file contains 5 splits. 
+2026-03-03 08:59:50.985264: Desired fold for training: 3 
+2026-03-03 08:59:50.994467: This split has 19 training and 5 validation cases. 
+
+This is the configuration used by this training:
+Configuration name: 3d_fullres
+ {'data_identifier': 'nnUNetPlans_3d_fullres', 'preprocessor_name': 'DefaultPreprocessor', 'batch_size': 2, 'patch_size': [128, 128, 128], 'median_image_size_in_voxels': [490.0, 443.5, 508.0], 'spacing': [0.11999999731779099, 0.11999999731779099, 0.11999999731779099], 'normalization_schemes': ['ZScoreNormalization'], 'use_mask_for_norm': [False], 'resampling_fn_data': 'resample_data_or_seg_to_shape', 'resampling_fn_seg': 'resample_data_or_seg_to_shape', 'resampling_fn_data_kwargs': {'is_seg': False, 'order': 3, 'order_z': 0, 'force_separate_z': None}, 'resampling_fn_seg_kwargs': {'is_seg': True, 'order': 1, 'order_z': 0, 'force_separate_z': None}, 'resampling_fn_probabilities': 'resample_data_or_seg_to_shape', 'resampling_fn_probabilities_kwargs': {'is_seg': False, 'order': 1, 'order_z': 0, 'force_separate_z': None}, 'architecture': {'network_class_name': 'dynamic_network_architectures.architectures.unet.ResidualEncoderUNet', 'arch_kwargs': {'n_stages': 6, 'features_per_stage': [32, 64, 128, 256, 320, 320], 'conv_op': 'torch.nn.modules.conv.Conv3d', 'kernel_sizes': [[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]], 'strides': [[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]], 'n_blocks_per_stage': [1, 3, 4, 6, 6, 6], 'n_conv_per_stage_decoder': [1, 1, 1, 1, 1], 'conv_bias': True, 'norm_op': 'torch.nn.modules.instancenorm.InstanceNorm3d', 'norm_op_kwargs': {'eps': 1e-05, 'affine': True}, 'dropout_op': None, 'dropout_op_kwargs': None, 'nonlin': 'torch.nn.LeakyReLU', 'nonlin_kwargs': {'inplace': True}}, '_kw_requires_import': ['conv_op', 'norm_op', 'dropout_op', 'nonlin']}, 'batch_dice': True} 
+ 
+These are the global plan.json settings:
+ {'dataset_name': 'Dataset312_ModelA', 'plans_name': 'nnUNetResEncUNetMPlans', 'original_median_spacing_after_transp': [0.11999999731779099, 0.11999999731779099, 0.11999999731779099], 'original_median_shape_after_transp': [504, 453, 516], 'image_reader_writer': 'SimpleITKIO', 'transpose_forward': [0, 1, 2], 'transpose_backward': [0, 1, 2], 'experiment_planner_used': 'nnUNetPlannerResEncM', 'label_manager': 'LabelManager', 'foreground_intensity_properties_per_channel': {'0': {'max': 247.0, 'mean': 49.308265686035156, 'median': 51.0, 'min': 0.0, 'percentile_00_5': 0.0, 'percentile_99_5': 149.0, 'std': 30.89409828186035}}} 
+ 
+2026-03-03 09:00:12.184793: Unable to plot network architecture: 
+2026-03-03 09:00:12.206089: No module named 'hiddenlayer' 
+2026-03-03 09:00:12.296691:  
+2026-03-03 09:00:12.329701: Epoch 0 
+2026-03-03 09:00:12.357907: Current learning rate: 0.01 
+2026-03-03 09:03:05.260044: train_loss 0.4865 
+2026-03-03 09:03:05.294205: val_loss 0.316 
+2026-03-03 09:03:05.322736: Pseudo dice [np.float32(0.5639), np.float32(1e-04), np.float32(0.0)] 
+2026-03-03 09:03:05.342777: Epoch time: 172.97 s 
+2026-03-03 09:03:05.363134: Yayy! New best EMA pseudo Dice: 0.18799999356269836 
+2026-03-03 09:03:08.749681:  
+2026-03-03 09:03:08.787699: Epoch 1 
+2026-03-03 09:03:08.818487: Current learning rate: 0.00982 
+2026-03-03 09:05:47.153143: train_loss 0.2334 
+2026-03-03 09:05:47.180930: val_loss 0.1515 
+2026-03-03 09:05:47.208504: Pseudo dice [np.float32(0.6516), np.float32(0.2377), np.float32(0.0)] 
+2026-03-03 09:05:47.243680: Epoch time: 158.41 s 
+2026-03-03 09:05:47.273786: Yayy! New best EMA pseudo Dice: 0.1987999975681305 
+2026-03-03 09:05:50.359400:  
+2026-03-03 09:05:50.382629: Epoch 2 
+2026-03-03 09:05:50.398421: Current learning rate: 0.00964 
+2026-03-03 09:09:07.257339: train_loss 0.0892 
+2026-03-03 09:09:07.306820: val_loss 0.0065 
+2026-03-03 09:09:07.343215: Pseudo dice [np.float32(0.7535), np.float32(0.6039), np.float32(1e-04)] 
+2026-03-03 09:09:07.380484: Epoch time: 196.9 s 
+2026-03-03 09:09:07.413781: Yayy! New best EMA pseudo Dice: 0.22419999539852142 
+2026-03-03 09:09:11.424498:  
+2026-03-03 09:09:11.459416: Epoch 3 
+2026-03-03 09:09:11.492442: Current learning rate: 0.00946 
+2026-03-03 09:12:36.939422: train_loss 0.0263 
+2026-03-03 09:12:36.971165: val_loss -0.0215 
+2026-03-03 09:12:37.001782: Pseudo dice [np.float32(0.7054), np.float32(0.6937), np.float32(0.2445)] 
+2026-03-03 09:12:37.031240: Epoch time: 205.52 s 
+2026-03-03 09:12:37.061102: Yayy! New best EMA pseudo Dice: 0.2565999925136566 
+2026-03-03 09:12:40.872039:  
+2026-03-03 09:12:40.912784: Epoch 4 
+2026-03-03 09:12:40.942624: Current learning rate: 0.00928 
+2026-03-03 09:15:57.719567: train_loss -0.0369 
+2026-03-03 09:15:57.761857: val_loss -0.0752 
+2026-03-03 09:15:57.791776: Pseudo dice [np.float32(0.7626), np.float32(0.6888), np.float32(0.3515)] 
+2026-03-03 09:15:57.822738: Epoch time: 196.85 s 
+2026-03-03 09:15:57.851657: Yayy! New best EMA pseudo Dice: 0.29100000858306885 
+2026-03-03 09:16:01.840919:  
+2026-03-03 09:16:01.875448: Epoch 5 
+2026-03-03 09:16:01.904022: Current learning rate: 0.0091 
+2026-03-03 09:19:08.032434: train_loss -0.1018 
+2026-03-03 09:19:08.052373: val_loss -0.1833 
+2026-03-03 09:19:08.076687: Pseudo dice [np.float32(0.7976), np.float32(0.7687), np.float32(0.3728)] 
+2026-03-03 09:19:08.102986: Epoch time: 186.2 s 
+2026-03-03 09:19:08.128200: Yayy! New best EMA pseudo Dice: 0.3264999985694885 
+2026-03-03 09:19:11.695494:  
+2026-03-03 09:19:11.707885: Epoch 6 
+2026-03-03 09:19:11.734384: Current learning rate: 0.00891 
+2026-03-03 09:23:39.766421: train_loss -0.1463 
+2026-03-03 09:23:39.802777: val_loss -0.2498 
+2026-03-03 09:23:39.831139: Pseudo dice [np.float32(0.846), np.float32(0.7903), np.float32(0.2811)] 
+2026-03-03 09:23:39.860759: Epoch time: 268.08 s 
+2026-03-03 09:23:39.890925: Yayy! New best EMA pseudo Dice: 0.3578000068664551 
+2026-03-03 09:23:43.599910:  
+2026-03-03 09:23:43.621864: Epoch 7 
+2026-03-03 09:23:43.650836: Current learning rate: 0.00873 
+2026-03-03 09:28:33.706789: train_loss -0.2035 
+2026-03-03 09:28:33.754313: val_loss -0.1838 
+2026-03-03 09:28:33.785365: Pseudo dice [np.float32(0.8508), np.float32(0.7572), np.float32(0.3092)] 
+2026-03-03 09:28:33.814196: Epoch time: 290.11 s 
+2026-03-03 09:28:33.842639: Yayy! New best EMA pseudo Dice: 0.38589999079704285 
+2026-03-03 09:28:37.729533:  
+2026-03-03 09:28:37.765686: Epoch 8 
+2026-03-03 09:28:37.798109: Current learning rate: 0.00855 
+2026-03-03 09:31:55.046799: train_loss -0.2622 
+2026-03-03 09:31:55.082895: val_loss -0.2462 
+2026-03-03 09:31:55.110676: Pseudo dice [np.float32(0.8063), np.float32(0.772), np.float32(0.5809)] 
+2026-03-03 09:31:55.140490: Epoch time: 197.33 s 
+2026-03-03 09:31:55.166792: Yayy! New best EMA pseudo Dice: 0.41929998993873596 
+2026-03-03 09:31:58.288028:  
+2026-03-03 09:31:58.311760: Epoch 9 
+2026-03-03 09:31:58.337589: Current learning rate: 0.00836 
+2026-03-03 09:35:19.105873: train_loss -0.2357 
+2026-03-03 09:35:19.153089: val_loss -0.3131 
+2026-03-03 09:35:19.184006: Pseudo dice [np.float32(0.8724), np.float32(0.8199), np.float32(0.5558)] 
+2026-03-03 09:35:19.212919: Epoch time: 200.82 s 
+2026-03-03 09:35:19.236612: Yayy! New best EMA pseudo Dice: 0.4523000121116638 
+2026-03-03 09:35:22.676349:  
+2026-03-03 09:35:22.688104: Epoch 10 
+2026-03-03 09:35:22.718290: Current learning rate: 0.00818 
+2026-03-03 09:38:40.660230: train_loss -0.283 
+2026-03-03 09:38:40.692212: val_loss -0.3322 
+2026-03-03 09:38:40.727666: Pseudo dice [np.float32(0.8993), np.float32(0.7948), np.float32(0.6475)] 
+2026-03-03 09:38:40.756511: Epoch time: 197.99 s 
+2026-03-03 09:38:40.787411: Yayy! New best EMA pseudo Dice: 0.48510000109672546 
+2026-03-03 09:38:44.650740:  
+2026-03-03 09:38:44.678075: Epoch 11 
+2026-03-03 09:38:44.708775: Current learning rate: 0.008 
+2026-03-03 09:56:30.888957: train_loss -0.2717 
+2026-03-03 09:56:30.922408: val_loss -0.2948 
+2026-03-03 09:56:30.953171: Pseudo dice [np.float32(0.845), np.float32(0.7702), np.float32(0.7783)] 
+2026-03-03 09:56:30.981630: Epoch time: 1066.25 s 
+2026-03-03 09:56:31.011242: Yayy! New best EMA pseudo Dice: 0.5163999795913696 
+2026-03-03 09:56:34.459855:  
+2026-03-03 09:56:34.489290: Epoch 12 
+2026-03-03 09:56:34.515680: Current learning rate: 0.00781 
+2026-03-03 10:04:02.002647: train_loss -0.3353 
+2026-03-03 10:04:02.030846: val_loss -0.3426 
+2026-03-03 10:04:02.056087: Pseudo dice [np.float32(0.8878), np.float32(0.8297), np.float32(0.6666)] 
+2026-03-03 10:04:02.085819: Epoch time: 447.55 s 
+2026-03-03 10:04:02.106897: Yayy! New best EMA pseudo Dice: 0.5442000031471252 
+2026-03-03 10:04:05.588605:  
+2026-03-03 10:04:05.621351: Epoch 13 
+2026-03-03 10:04:05.651190: Current learning rate: 0.00763 
+2026-03-03 10:06:45.147888: train_loss -0.3386 
+2026-03-03 10:06:45.193067: val_loss -0.3735 
+2026-03-03 10:06:45.224420: Pseudo dice [np.float32(0.8412), np.float32(0.872), np.float32(0.7256)] 
+2026-03-03 10:06:45.252870: Epoch time: 159.57 s 
+2026-03-03 10:06:45.282489: Yayy! New best EMA pseudo Dice: 0.5710999965667725 
+2026-03-03 10:06:49.145251:  
+2026-03-03 10:06:49.173872: Epoch 14 
+2026-03-03 10:06:49.202994: Current learning rate: 0.00744 
+2026-03-03 10:09:58.245759: train_loss -0.3398 
+2026-03-03 10:09:58.283796: val_loss -0.399 
+2026-03-03 10:09:58.309925: Pseudo dice [np.float32(0.8735), np.float32(0.8815), np.float32(0.7144)] 
+2026-03-03 10:09:58.338571: Epoch time: 189.11 s 
+2026-03-03 10:09:58.366807: Yayy! New best EMA pseudo Dice: 0.5963000059127808 
+2026-03-03 10:10:01.963020:  
+2026-03-03 10:10:01.997599: Epoch 15 
+2026-03-03 10:10:02.028718: Current learning rate: 0.00725 
+2026-03-03 10:14:41.159730: train_loss -0.3674 
+2026-03-03 10:14:41.196208: val_loss -0.4421 
+2026-03-03 10:14:41.219458: Pseudo dice [np.float32(0.8895), np.float32(0.8696), np.float32(0.7757)] 
+2026-03-03 10:14:41.248769: Epoch time: 279.2 s 
+2026-03-03 10:14:41.276509: Yayy! New best EMA pseudo Dice: 0.6212000250816345 
+2026-03-03 10:14:45.267223:  
+2026-03-03 10:14:45.303221: Epoch 16 
+2026-03-03 10:14:45.335117: Current learning rate: 0.00707 
+2026-03-03 10:24:52.867126: train_loss -0.3487 
+2026-03-03 10:24:52.882929: val_loss -0.3366 
+2026-03-03 10:24:52.915075: Pseudo dice [np.float32(0.8905), np.float32(0.8028), np.float32(0.4988)] 
+2026-03-03 10:24:52.946184: Epoch time: 607.61 s 
+2026-03-03 10:24:52.974178: Yayy! New best EMA pseudo Dice: 0.632099986076355 
+2026-03-03 10:24:57.050453:  
+2026-03-03 10:24:57.080996: Epoch 17 
+2026-03-03 10:24:57.107705: Current learning rate: 0.00688 
+2026-03-03 10:56:08.229062: train_loss -0.4302 
+2026-03-03 10:56:08.259953: val_loss -0.4507 
+2026-03-03 10:56:08.284215: Pseudo dice [np.float32(0.8771), np.float32(0.8757), np.float32(0.7801)] 
+2026-03-03 10:56:08.308278: Epoch time: 1871.19 s 
+2026-03-03 10:56:08.331434: Yayy! New best EMA pseudo Dice: 0.6532999873161316 
+2026-03-03 10:56:11.416250:  
+2026-03-03 10:56:11.440935: Epoch 18 
+2026-03-03 10:56:11.460728: Current learning rate: 0.00669 
+2026-03-03 11:23:16.893690: train_loss -0.4186 
+2026-03-03 11:23:16.921179: val_loss -0.4415 
+2026-03-03 11:23:16.957996: Pseudo dice [np.float32(0.9002), np.float32(0.8585), np.float32(0.7659)] 
+2026-03-03 11:23:16.975231: Epoch time: 1625.48 s 
+2026-03-03 11:23:17.002363: Yayy! New best EMA pseudo Dice: 0.6722000241279602 
+2026-03-03 11:23:23.151941:  
+2026-03-03 11:23:23.186612: Epoch 19 
+2026-03-03 11:23:23.215811: Current learning rate: 0.0065 
+2026-03-03 11:59:00.665749: train_loss -0.4133 
+2026-03-03 11:59:00.700705: val_loss -0.3619 
+2026-03-03 11:59:00.726887: Pseudo dice [np.float32(0.8337), np.float32(0.8555), np.float32(0.7713)] 
+2026-03-03 11:59:00.756193: Epoch time: 2137.52 s 
+2026-03-03 11:59:00.782490: Yayy! New best EMA pseudo Dice: 0.6869999766349792 
+2026-03-03 11:59:04.119327:  
+2026-03-03 11:59:04.148707: Epoch 20 
+2026-03-03 11:59:04.172570: Current learning rate: 0.00631 
+2026-03-03 12:10:40.086441: train_loss -0.4027 
+2026-03-03 12:10:40.128373: val_loss -0.3526 
+2026-03-03 12:10:40.156019: Pseudo dice [np.float32(0.8824), np.float32(0.8302), np.float32(0.7062)] 
+2026-03-03 12:10:40.185526: Epoch time: 695.97 s 
+2026-03-03 12:10:40.212652: Yayy! New best EMA pseudo Dice: 0.6988999843597412 
+2026-03-03 12:10:43.494101:  
+2026-03-03 12:10:43.522332: Epoch 21 
+2026-03-03 12:10:43.545486: Current learning rate: 0.00612 
+2026-03-03 12:24:56.546859: train_loss -0.4285 
+2026-03-03 12:24:56.579279: val_loss -0.4935 
+2026-03-03 12:24:56.603379: Pseudo dice [np.float32(0.9027), np.float32(0.892), np.float32(0.7974)] 
+2026-03-03 12:24:56.630626: Epoch time: 853.06 s 
+2026-03-03 12:24:56.653168: Yayy! New best EMA pseudo Dice: 0.715399980545044 
+2026-03-03 12:25:00.452251:  
+2026-03-03 12:25:00.475329: Epoch 22 
+2026-03-03 12:25:00.500152: Current learning rate: 0.00593 
+2026-03-03 12:31:16.463203: train_loss -0.4574 
+2026-03-03 12:31:16.483459: val_loss -0.4868 
+2026-03-03 12:31:16.514465: Pseudo dice [np.float32(0.9123), np.float32(0.889), np.float32(0.791)] 
+2026-03-03 12:31:16.553805: Epoch time: 376.02 s 
+2026-03-03 12:31:16.586505: Yayy! New best EMA pseudo Dice: 0.7303000092506409 
+2026-03-03 12:31:20.364520:  
+2026-03-03 12:31:20.403043: Epoch 23 
+2026-03-03 12:31:20.430649: Current learning rate: 0.00574 
+2026-03-03 12:34:42.950069: train_loss -0.4661 
+2026-03-03 12:34:42.969630: val_loss -0.4902 
+2026-03-03 12:34:42.997363: Pseudo dice [np.float32(0.911), np.float32(0.8753), np.float32(0.7742)] 
+2026-03-03 12:34:43.024859: Epoch time: 202.59 s 
+2026-03-03 12:34:43.066440: Yayy! New best EMA pseudo Dice: 0.7426000237464905 
+2026-03-03 12:34:46.674436:  
+2026-03-03 12:34:46.702624: Epoch 24 
+2026-03-03 12:34:46.726692: Current learning rate: 0.00555 
+2026-03-03 12:38:02.078664: train_loss -0.4688 
+2026-03-03 12:38:02.108360: val_loss -0.5052 
+2026-03-03 12:38:02.134517: Pseudo dice [np.float32(0.9112), np.float32(0.9069), np.float32(0.8847)] 
+2026-03-03 12:38:02.157953: Epoch time: 195.41 s 
+2026-03-03 12:38:02.183457: Yayy! New best EMA pseudo Dice: 0.758400022983551 
+2026-03-03 12:38:05.848433:  
+2026-03-03 12:38:05.876612: Epoch 25 
+2026-03-03 12:38:05.903668: Current learning rate: 0.00536 
+2026-03-03 12:40:48.682715: train_loss -0.4558 
+2026-03-03 12:40:48.697466: val_loss -0.4379 
+2026-03-03 12:40:48.719241: Pseudo dice [np.float32(0.9035), np.float32(0.8348), np.float32(0.7883)] 
+2026-03-03 12:40:48.737691: Epoch time: 162.84 s 
+2026-03-03 12:40:48.757214: Yayy! New best EMA pseudo Dice: 0.7667999863624573 
+2026-03-03 12:40:54.131395:  
+2026-03-03 12:40:54.142796: Epoch 26 
+2026-03-03 12:40:54.152471: Current learning rate: 0.00517 
+2026-03-03 12:43:27.039777: train_loss -0.4936 
+2026-03-03 12:43:27.076372: val_loss -0.5225 
+2026-03-03 12:43:27.100556: Pseudo dice [np.float32(0.9127), np.float32(0.9033), np.float32(0.8291)] 
+2026-03-03 12:43:27.129871: Epoch time: 152.91 s 
+2026-03-03 12:43:27.147921: Yayy! New best EMA pseudo Dice: 0.7782999873161316 
+2026-03-03 12:43:31.159164:  
+2026-03-03 12:43:31.194518: Epoch 27 
+2026-03-03 12:43:31.222860: Current learning rate: 0.00497 
+2026-03-03 12:46:07.783031: train_loss -0.47 
+2026-03-03 12:46:07.796593: val_loss -0.4858 
+2026-03-03 12:46:07.825613: Pseudo dice [np.float32(0.9034), np.float32(0.9095), np.float32(0.8552)] 
+2026-03-03 12:46:07.855635: Epoch time: 156.63 s 
+2026-03-03 12:46:07.867528: Yayy! New best EMA pseudo Dice: 0.7893999814987183 
+2026-03-03 12:46:12.365296:  
+2026-03-03 12:46:12.415739: Epoch 28 
+2026-03-03 12:46:12.445968: Current learning rate: 0.00478 
+2026-03-03 12:48:43.300279: train_loss -0.4679 
+2026-03-03 12:48:43.336520: val_loss -0.558 
+2026-03-03 12:48:43.361589: Pseudo dice [np.float32(0.8979), np.float32(0.9258), np.float32(0.8394)] 
+2026-03-03 12:48:43.386574: Epoch time: 150.94 s 
+2026-03-03 12:48:43.413344: Yayy! New best EMA pseudo Dice: 0.7991999983787537 
+2026-03-03 12:48:47.735029:  
+2026-03-03 12:48:47.765097: Epoch 29 
+2026-03-03 12:48:47.797054: Current learning rate: 0.00458 
+2026-03-03 12:51:20.386763: train_loss -0.4805 
+2026-03-03 12:51:20.428475: val_loss -0.4232 
+2026-03-03 12:51:20.457962: Pseudo dice [np.float32(0.8924), np.float32(0.8354), np.float32(0.7373)] 
+2026-03-03 12:51:20.480345: Epoch time: 152.66 s 
+2026-03-03 12:51:20.498872: Yayy! New best EMA pseudo Dice: 0.8015000224113464 
+2026-03-03 12:51:24.703071:  
+2026-03-03 12:51:24.739410: Epoch 30 
+2026-03-03 12:51:24.764812: Current learning rate: 0.00438 
+2026-03-03 12:54:18.737203: train_loss -0.5089 
+2026-03-03 12:54:18.772899: val_loss -0.4855 
+2026-03-03 12:54:18.803261: Pseudo dice [np.float32(0.9148), np.float32(0.9082), np.float32(0.793)] 
+2026-03-03 12:54:18.833211: Epoch time: 174.04 s 
+2026-03-03 12:54:18.857234: Yayy! New best EMA pseudo Dice: 0.8084999918937683 
+2026-03-03 12:54:26.050018:  
+2026-03-03 12:54:26.082288: Epoch 31 
+2026-03-03 12:54:26.110293: Current learning rate: 0.00419 
+2026-03-03 12:57:39.074188: train_loss -0.5347 
+2026-03-03 12:57:39.107195: val_loss -0.5173 
+2026-03-03 12:57:39.131732: Pseudo dice [np.float32(0.9053), np.float32(0.8928), np.float32(0.7528)] 
+2026-03-03 12:57:39.160095: Epoch time: 193.03 s 
+2026-03-03 12:57:39.188612: Yayy! New best EMA pseudo Dice: 0.8126999735832214 
+2026-03-03 12:57:42.934947:  
+2026-03-03 12:57:42.964828: Epoch 32 
+2026-03-03 12:57:42.991738: Current learning rate: 0.00399 
+2026-03-03 13:00:56.722556: train_loss -0.5287 
+2026-03-03 13:00:56.748810: val_loss -0.4947 
+2026-03-03 13:00:56.776835: Pseudo dice [np.float32(0.9062), np.float32(0.9148), np.float32(0.8255)] 
+2026-03-03 13:00:56.803015: Epoch time: 193.79 s 
+2026-03-03 13:00:56.832089: Yayy! New best EMA pseudo Dice: 0.8197000026702881 
+2026-03-03 13:01:00.576818:  
+2026-03-03 13:01:00.601543: Epoch 33 
+2026-03-03 13:01:00.630127: Current learning rate: 0.00379 
+2026-03-03 13:06:55.646419: train_loss -0.5413 
+2026-03-03 13:06:55.680237: val_loss -0.5189 
+2026-03-03 13:06:55.703107: Pseudo dice [np.float32(0.9148), np.float32(0.8886), np.float32(0.8846)] 
+2026-03-03 13:06:55.724529: Epoch time: 355.07 s 
+2026-03-03 13:06:55.746457: Yayy! New best EMA pseudo Dice: 0.8273000121116638 
+2026-03-03 13:07:00.912360:  
+2026-03-03 13:07:00.934369: Epoch 34 
+2026-03-03 13:07:00.954050: Current learning rate: 0.00359 
+2026-03-03 13:12:24.831374: train_loss -0.5181 
+2026-03-03 13:12:24.851378: val_loss -0.4665 
+2026-03-03 13:12:24.868677: Pseudo dice [np.float32(0.9096), np.float32(0.894), np.float32(0.8533)] 
+2026-03-03 13:12:24.886065: Epoch time: 323.93 s 
+2026-03-03 13:12:24.904639: Yayy! New best EMA pseudo Dice: 0.8331000208854675 
+2026-03-03 13:12:28.151442:  
+2026-03-03 13:12:28.176679: Epoch 35 
+2026-03-03 13:12:28.200662: Current learning rate: 0.00338 
+2026-03-03 13:27:02.492116: train_loss -0.5636 
+2026-03-03 13:27:02.516190: val_loss -0.5335 
+2026-03-03 13:27:02.528183: Pseudo dice [np.float32(0.9309), np.float32(0.917), np.float32(0.8535)] 
+2026-03-03 13:27:02.553963: Epoch time: 874.35 s 
+2026-03-03 13:27:02.575169: Yayy! New best EMA pseudo Dice: 0.839900016784668 
+2026-03-03 13:27:05.702643:  
+2026-03-03 13:27:05.720306: Epoch 36 
+2026-03-03 13:27:05.742475: Current learning rate: 0.00318 
+2026-03-03 13:44:18.576421: train_loss -0.5292 
+2026-03-03 13:44:18.603169: val_loss -0.5304 
+2026-03-03 13:44:18.633483: Pseudo dice [np.float32(0.9179), np.float32(0.9099), np.float32(0.8901)] 
+2026-03-03 13:44:18.667355: Epoch time: 1032.88 s 
+2026-03-03 13:44:18.692714: Yayy! New best EMA pseudo Dice: 0.8464999794960022 
+2026-03-03 13:44:22.218011:  
+2026-03-03 13:44:22.243467: Epoch 37 
+2026-03-03 13:44:22.268067: Current learning rate: 0.00297 
+2026-03-03 13:51:51.578686: train_loss -0.5593 
+2026-03-03 13:51:51.612069: val_loss -0.5499 
+2026-03-03 13:51:51.639282: Pseudo dice [np.float32(0.9211), np.float32(0.9052), np.float32(0.7886)] 
+2026-03-03 13:51:51.664782: Epoch time: 449.37 s 
+2026-03-03 13:51:51.689011: Yayy! New best EMA pseudo Dice: 0.8489999771118164 
+2026-03-03 13:51:55.708879:  
+2026-03-03 13:51:55.720719: Epoch 38 
+2026-03-03 13:51:55.744727: Current learning rate: 0.00277 
+2026-03-03 13:54:34.758187: train_loss -0.5343 
+2026-03-03 13:54:34.788706: val_loss -0.439 
+2026-03-03 13:54:34.812855: Pseudo dice [np.float32(0.9131), np.float32(0.8185), np.float32(0.7504)] 
+2026-03-03 13:54:34.843411: Epoch time: 159.06 s 
+2026-03-03 13:54:36.823167:  
+2026-03-03 13:54:36.857259: Epoch 39 
+2026-03-03 13:54:36.877345: Current learning rate: 0.00256 
+2026-03-03 13:58:01.915116: train_loss -0.5817 
+2026-03-03 13:58:01.947325: val_loss -0.5314 
+2026-03-03 13:58:01.975301: Pseudo dice [np.float32(0.9134), np.float32(0.9211), np.float32(0.9015)] 
+2026-03-03 13:58:01.998588: Epoch time: 205.1 s 
+2026-03-03 13:58:02.024312: Yayy! New best EMA pseudo Dice: 0.8532999753952026 
+2026-03-03 13:58:06.520023:  
+2026-03-03 13:58:06.549154: Epoch 40 
+2026-03-03 13:58:06.575123: Current learning rate: 0.00235 
+2026-03-03 14:02:57.771833: train_loss -0.5721 
+2026-03-03 14:02:57.798926: val_loss -0.4961 
+2026-03-03 14:02:57.821171: Pseudo dice [np.float32(0.9268), np.float32(0.897), np.float32(0.8849)] 
+2026-03-03 14:02:57.838568: Epoch time: 291.26 s 
+2026-03-03 14:02:57.860275: Yayy! New best EMA pseudo Dice: 0.858299970626831 
+2026-03-03 14:03:00.868281:  
+2026-03-03 14:03:00.886853: Epoch 41 
+2026-03-03 14:03:00.908187: Current learning rate: 0.00214 
+2026-03-03 14:08:08.485263: train_loss -0.5194 
+2026-03-03 14:08:08.524044: val_loss -0.5415 
+2026-03-03 14:08:08.550941: Pseudo dice [np.float32(0.9211), np.float32(0.9129), np.float32(0.8713)] 
+2026-03-03 14:08:08.578890: Epoch time: 307.62 s 
+2026-03-03 14:08:08.606160: Yayy! New best EMA pseudo Dice: 0.8626000285148621 
+2026-03-03 14:08:12.707901:  
+2026-03-03 14:08:12.728220: Epoch 42 
+2026-03-03 14:08:12.751740: Current learning rate: 0.00192 
+2026-03-03 14:10:46.638583: train_loss -0.5661 
+2026-03-03 14:10:46.680115: val_loss -0.5038 
+2026-03-03 14:10:46.707202: Pseudo dice [np.float32(0.924), np.float32(0.9283), np.float32(0.8958)] 
+2026-03-03 14:10:46.732953: Epoch time: 153.94 s 
+2026-03-03 14:10:46.759633: Yayy! New best EMA pseudo Dice: 0.8679999709129333 
+2026-03-03 14:10:50.829465:  
+2026-03-03 14:10:50.857193: Epoch 43 
+2026-03-03 14:10:50.878671: Current learning rate: 0.0017 
+2026-03-03 14:13:25.577733: train_loss -0.5814 
+2026-03-03 14:13:25.611588: val_loss -0.5723 
+2026-03-03 14:13:25.626443: Pseudo dice [np.float32(0.9282), np.float32(0.9207), np.float32(0.8927)] 
+2026-03-03 14:13:25.649963: Epoch time: 154.75 s 
+2026-03-03 14:13:25.675542: Yayy! New best EMA pseudo Dice: 0.8726000189781189 
+2026-03-03 14:13:29.450404:  
+2026-03-03 14:13:29.482405: Epoch 44 
+2026-03-03 14:13:29.496750: Current learning rate: 0.00148 
+2026-03-03 14:21:53.761695: train_loss -0.5911 
+2026-03-03 14:21:53.791260: val_loss -0.5541 
+2026-03-03 14:21:53.812867: Pseudo dice [np.float32(0.9283), np.float32(0.9191), np.float32(0.8695)] 
+2026-03-03 14:21:53.840052: Epoch time: 504.32 s 
+2026-03-03 14:21:53.853673: Yayy! New best EMA pseudo Dice: 0.8758999705314636 
+2026-03-03 14:21:57.064984:  
+2026-03-03 14:21:57.088361: Epoch 45 
+2026-03-03 14:21:57.108624: Current learning rate: 0.00126 
+2026-03-03 14:25:04.835914: train_loss -0.5903 
+2026-03-03 14:25:04.872067: val_loss -0.5122 
+2026-03-03 14:25:04.899869: Pseudo dice [np.float32(0.9053), np.float32(0.9011), np.float32(0.8856)] 
+2026-03-03 14:25:04.931326: Epoch time: 187.78 s 
+2026-03-03 14:25:04.965073: Yayy! New best EMA pseudo Dice: 0.878000020980835 
+2026-03-03 14:25:09.503035:  
+2026-03-03 14:25:09.530939: Epoch 46 
+2026-03-03 14:25:09.558542: Current learning rate: 0.00103 
+2026-03-03 14:28:26.474953: train_loss -0.565 
+2026-03-03 14:28:26.503118: val_loss -0.5534 
+2026-03-03 14:28:26.528901: Pseudo dice [np.float32(0.9246), np.float32(0.9239), np.float32(0.9204)] 
+2026-03-03 14:28:26.544886: Epoch time: 196.98 s 
+2026-03-03 14:28:26.561844: Yayy! New best EMA pseudo Dice: 0.8824999928474426 
+2026-03-03 14:28:29.979052:  
+2026-03-03 14:28:30.007166: Epoch 47 
+2026-03-03 14:28:30.031012: Current learning rate: 0.00079 
+2026-03-03 14:31:49.793742: train_loss -0.5866 
+2026-03-03 14:31:49.834219: val_loss -0.5274 
+2026-03-03 14:31:49.858287: Pseudo dice [np.float32(0.9249), np.float32(0.9199), np.float32(0.8776)] 
+2026-03-03 14:31:49.878755: Epoch time: 199.82 s 
+2026-03-03 14:31:49.903796: Yayy! New best EMA pseudo Dice: 0.8849999904632568 
+2026-03-03 14:31:53.394377:  
+2026-03-03 14:31:53.409854: Epoch 48 
+2026-03-03 14:31:53.421768: Current learning rate: 0.00055 
+2026-03-03 14:34:43.929755: train_loss -0.5957 
+2026-03-03 14:34:43.953853: val_loss -0.5523 
+2026-03-03 14:34:43.987360: Pseudo dice [np.float32(0.9349), np.float32(0.9248), np.float32(0.9133)] 
+2026-03-03 14:34:44.014957: Epoch time: 170.54 s 
+2026-03-03 14:34:44.049314: Yayy! New best EMA pseudo Dice: 0.8888999819755554 
+2026-03-03 14:34:49.004413:  
+2026-03-03 14:34:49.034549: Epoch 49 
+2026-03-03 14:34:49.059796: Current learning rate: 0.0003 
+2026-03-03 14:38:01.059298: train_loss -0.5759 
+2026-03-03 14:38:01.093823: val_loss -0.553 
+2026-03-03 14:38:01.122719: Pseudo dice [np.float32(0.9223), np.float32(0.9113), np.float32(0.9149)] 
+2026-03-03 14:38:01.149690: Epoch time: 192.06 s 
+2026-03-03 14:38:01.164710: Yayy! New best EMA pseudo Dice: 0.891700029373169 
+2026-03-03 14:38:08.419380: Training done. 
+2026-03-03 14:38:08.578818: Using splits from existing split file: C:\git\catalyst-tools\catalyst_preprocessed\Dataset312_ModelA\splits_final.json 
+2026-03-03 14:38:08.618834: The split file contains 5 splits. 
+2026-03-03 14:38:08.642241: Desired fold for training: 3 
+2026-03-03 14:38:08.666297: This split has 19 training and 5 validation cases. 
+2026-03-03 14:38:08.691454: predicting CASE-007-P3-1-LEFT 
+2026-03-03 14:38:14.086743: CASE-007-P3-1-LEFT, shape torch.Size([1, 555, 431, 524]), rank 0 
+2026-03-03 14:42:09.901894: predicting CASE-014-P3-1-LEFT 
+2026-03-03 14:42:14.654284: CASE-014-P3-1-LEFT, shape torch.Size([1, 479, 442, 500]), rank 0 
+2026-03-03 14:45:14.796804: predicting CASE-028-P3-1-LEFT 
+2026-03-03 14:45:21.099717: CASE-028-P3-1-LEFT, shape torch.Size([1, 610, 444, 559]), rank 0 
+2026-03-03 14:49:44.692822: predicting CASE-028-P3-1-RIGHT 
+2026-03-03 14:49:53.097688: CASE-028-P3-1-RIGHT, shape torch.Size([1, 695, 510, 588]), rank 0 
+2026-03-03 14:56:13.219770: predicting CASE-029-P2-1-LEFT 
+2026-03-03 14:56:19.585031: CASE-029-P2-1-LEFT, shape torch.Size([1, 583, 521, 536]), rank 0 
+2026-03-03 15:02:58.821614: Validation complete 
+2026-03-03 15:02:58.855752: Mean Validation Dice:  0.8401379799764138 
